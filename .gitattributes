@@ -1,0 +1,13 @@
+# 全ファイルをテキストとみなし、改行コードをLFで固定する
+* text=auto eol=lf
+.gitignore -text
+# 既存ファイルの改行コードを強制的に正規化（反映）させるコマンド
+# git add . --renormalize
+
+# 明示的にCRLFで固定したいファイル（Windows専用バッチファイルなど）
+# *.bat text eol=crlf
+# *.vcproj text eol=crlf
+
+# 画像などのバイナリファイルは改行変換の対象外にする
+# *.png binary
+# *.jpg binary
