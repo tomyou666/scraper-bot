@@ -41,6 +41,7 @@ RUN curl -sSfL https://golangci-lint.run/install.sh \
 RUN groupadd --gid "${GID}" "${USERNAME}" \
     && useradd --uid "${UID}" --gid "${GID}" -m -s /bin/bash "${USERNAME}"
 
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@latest
 
 USER ${USERNAME}
 
