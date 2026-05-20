@@ -16,10 +16,13 @@ func init() {
 	core.RegisterFilter("maincontent", func() plugin.Filter { return &filter{} })
 }
 
+// filter はメインコンテンツ抽出用 P7 Filter の実装。
 type filter struct {
+	// host は Init で受け取る Host。
 	host plugin.Host
 }
 
+// Metadata は plugin.Filter.Metadata の実装。
 func (f *filter) Metadata() plugin.Metadata {
 	return plugin.Metadata{
 		Name:        "maincontent",
@@ -29,13 +32,16 @@ func (f *filter) Metadata() plugin.Metadata {
 	}
 }
 
+// Init は plugin.Plugin.Init の実装。
 func (f *filter) Init(_ context.Context, host plugin.Host) error {
 	f.host = host
 	return nil
 }
 
+// Close は plugin.Plugin.Close の実装。
 func (f *filter) Close(_ context.Context) error { return nil }
 
+// Filter はノイズ要素を DOM から除去する。
 func (f *filter) Filter(_ context.Context, c *model.Content) (*model.Content, error) {
 	if c.Format != "html" {
 		return c, nil

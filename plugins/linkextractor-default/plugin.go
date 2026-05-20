@@ -17,10 +17,13 @@ func init() {
 	core.RegisterLinkExtractor("default", func() plugin.LinkExtractor { return &extractor{} })
 }
 
+// extractor はデフォルト P8 LinkExtractor の実装。
 type extractor struct {
+	// host は Init で受け取る Host。
 	host plugin.Host
 }
 
+// Metadata は plugin.LinkExtractor.Metadata の実装。
 func (e *extractor) Metadata() plugin.Metadata {
 	return plugin.Metadata{
 		Name:        "default",
@@ -30,13 +33,16 @@ func (e *extractor) Metadata() plugin.Metadata {
 	}
 }
 
+// Init は plugin.Plugin.Init の実装。
 func (e *extractor) Init(_ context.Context, host plugin.Host) error {
 	e.host = host
 	return nil
 }
 
+// Close は plugin.Plugin.Close の実装。
 func (e *extractor) Close(_ context.Context) error { return nil }
 
+// Extract は <a href> から絶対 URL 一覧を抽出する。
 func (e *extractor) Extract(_ context.Context, c *model.Content, base *url.URL) ([]*url.URL, error) {
 	if c.Format != "html" {
 		return nil, nil

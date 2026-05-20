@@ -10,6 +10,7 @@ import (
 
 // SlogAdapter は log/slog を plugin.Logger 抽象に適合させる。
 type SlogAdapter struct {
+	// l は委譲先の slog ロガー。
 	l *slog.Logger
 }
 
@@ -24,9 +25,16 @@ func New(w io.Writer, level slog.Level) *SlogAdapter {
 	return &SlogAdapter{l: slog.New(h)}
 }
 
+// Debug は plugin.Logger.Debug の実装。
 func (s *SlogAdapter) Debug(msg string, kv ...any) { s.l.Debug(msg, kv...) }
-func (s *SlogAdapter) Info(msg string, kv ...any)  { s.l.Info(msg, kv...) }
-func (s *SlogAdapter) Warn(msg string, kv ...any)  { s.l.Warn(msg, kv...) }
+
+// Info は plugin.Logger.Info の実装。
+func (s *SlogAdapter) Info(msg string, kv ...any) { s.l.Info(msg, kv...) }
+
+// Warn は plugin.Logger.Warn の実装。
+func (s *SlogAdapter) Warn(msg string, kv ...any) { s.l.Warn(msg, kv...) }
+
+// Error は plugin.Logger.Error の実装。
 func (s *SlogAdapter) Error(msg string, kv ...any) { s.l.Error(msg, kv...) }
 
 // 静的に plugin.Logger を満たすことを保証。

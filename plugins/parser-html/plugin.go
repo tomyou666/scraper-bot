@@ -18,10 +18,13 @@ func init() {
 	core.RegisterParser("html", func() plugin.Parser { return &parser{} })
 }
 
+// parser は HTML 用 P5 Parser の実装。
 type parser struct {
+	// host は Init で受け取る Host。
 	host plugin.Host
 }
 
+// Metadata は plugin.Parser.Metadata の実装。
 func (p *parser) Metadata() plugin.Metadata {
 	return plugin.Metadata{
 		Name:        "html",
@@ -31,13 +34,16 @@ func (p *parser) Metadata() plugin.Metadata {
 	}
 }
 
+// Init は plugin.Plugin.Init の実装。
 func (p *parser) Init(_ context.Context, host plugin.Host) error {
 	p.host = host
 	return nil
 }
 
+// Close は plugin.Plugin.Close の実装。
 func (p *parser) Close(_ context.Context) error { return nil }
 
+// CanParse は HTML 系 Content-Type または .html/.htm パスを判定する。
 func (p *parser) CanParse(res *model.Response) bool {
 	ct := strings.ToLower(res.ContentType)
 	if strings.Contains(ct, "text/html") || strings.Contains(ct, "application/xhtml+xml") {
@@ -47,6 +53,7 @@ func (p *parser) CanParse(res *model.Response) bool {
 	return strings.HasSuffix(path, ".html") || strings.HasSuffix(path, ".htm") || path == "" || path == "/"
 }
 
+// Parse は HTML 本文を goquery で解析し model.Content を返す。
 func (p *parser) Parse(_ context.Context, res *model.Response) (*model.Content, error) {
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(res.Body))
 	if err != nil {

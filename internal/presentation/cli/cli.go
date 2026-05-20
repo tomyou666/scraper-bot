@@ -21,8 +21,11 @@ import (
 
 // App は CLI 実行に必要な I/O 依存をまとめる。テスト時はここを差し替える。
 type App struct {
-	Args   []string
+	// Args は os.Args[1:] 相当の CLI 引数。
+	Args []string
+	// Stdout は標準出力の代替（テスト用）。
 	Stdout io.Writer
+	// Stderr は標準エラーの代替（テスト用）。
 	Stderr io.Writer
 }
 
@@ -35,6 +38,7 @@ func Run() int {
 	}).RunApp()
 }
 
+// RunApp は設定読み込み・Kernel 初期化・単一 URL またはクロールを実行する。
 func (a *App) RunApp() int {
 	flags, err := ParseArgs(a.Args)
 	if err != nil {
@@ -77,6 +81,7 @@ func (a *App) RunApp() int {
 	return a.runSingle(ctx, &cfg, kernel, client, flags)
 }
 
+// runSingle は単一 URL モードでスクレイプしファイルまたは標準出力へ出す。
 func (a *App) runSingle(ctx context.Context, cfg *model.Config, k *core.Kernel, client *httpclient.Client, flags *Flags) int {
 	uc := usecase.NewScrape(k, client)
 	res, err := uc.Run(ctx, cfg.Targets[0])
@@ -97,6 +102,7 @@ func (a *App) runSingle(ctx context.Context, cfg *model.Config, k *core.Kernel, 
 	return 0
 }
 
+// runCrawl はクロールモードで複数 URL を巡回し結果を出力ディレクトリへ保存する。
 func (a *App) runCrawl(ctx context.Context, cfg *model.Config, k *core.Kernel, client *httpclient.Client, logger *logging.SlogAdapter) int {
 	w := storage.NewFileWriter(cfg.Output, cfg.Content.Formats)
 	robotsCache := robots.NewCache(client, logger)

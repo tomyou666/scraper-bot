@@ -7,10 +7,16 @@ import (
 
 // Response は HTTP 取得結果を表す（P5 Parser の入力）。
 type Response struct {
-	URL         *url.URL
-	StatusCode  int
-	Headers     map[string]string
+	// URL は取得したリソースの URL。
+	URL *url.URL
+	// StatusCode は HTTP ステータスコード。
+	StatusCode int
+	// Headers はレスポンスヘッダ（先頭値のみ保持）。
+	Headers map[string]string
+	// ContentType は Content-Type ヘッダの値。
 	ContentType string
-	Body        []byte
-	FetchedAt   time.Time
+	// Body はレスポンス本文の生バイト列。
+	Body []byte
+	// FetchedAt は取得完了時刻。
+	FetchedAt time.Time
 }

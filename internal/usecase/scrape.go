@@ -12,10 +12,13 @@ import (
 
 // Scrape は単一URLの取得→出力までを実行するユースケース。
 type Scrape struct {
-	Kernel  *core.Kernel
+	// Kernel は初期化済みプラグインを束ねるカーネル。
+	Kernel *core.Kernel
+	// Fetcher は HTTP 取得実装。
 	Fetcher core.Fetcher
 }
 
+// NewScrape は単一 URL スクレイプ用ユースケースを構築する。
 func NewScrape(k *core.Kernel, f core.Fetcher) *Scrape {
 	return &Scrape{Kernel: k, Fetcher: f}
 }

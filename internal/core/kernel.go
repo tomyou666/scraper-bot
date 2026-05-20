@@ -11,16 +11,25 @@ import (
 
 // Kernel はプラグインのライフサイクル制御とパイプラインの依存提供を担う。
 type Kernel struct {
-	cfg  *model.Config
+	// cfg は実行設定。
+	cfg *model.Config
+	// host はプラグインへ渡す依存。
 	host plugin.Host
-	reg  *Registry
+	// reg はプラグインファクトリのレジストリ。
+	reg *Registry
 
+	// preprocessors は Init 済み PreProcessor チェーン。
 	preprocessors []plugin.PreProcessor
-	parsers       []plugin.Parser
-	transformer   plugin.Transformer
-	filters       []plugin.Filter
+	// parsers は Init 済み Parser 一覧。
+	parsers []plugin.Parser
+	// transformer は Init 済み Transformer。
+	transformer plugin.Transformer
+	// filters は Init 済み Filter チェーン。
+	filters []plugin.Filter
+	// linkExtractor は Init 済み LinkExtractor。
 	linkExtractor plugin.LinkExtractor
 
+	// initialized は Init 成功順のプラグイン（Close 用）。
 	initialized []plugin.Plugin
 }
 
@@ -120,12 +129,23 @@ func (k *Kernel) Close(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// --- パイプラインから参照するアクセサ ---
+// Config はカーネルが保持する実行設定を返す。
+func (k *Kernel) Config() *model.Config { return k.cfg }
 
-func (k *Kernel) Config() *model.Config                { return k.cfg }
-func (k *Kernel) Host() plugin.Host                    { return k.host }
+// Host はプラグインに渡した Host 実装を返す。
+func (k *Kernel) Host() plugin.Host { return k.host }
+
+// PreProcessors は Init 済みの PreProcessor 一覧を返す。
 func (k *Kernel) PreProcessors() []plugin.PreProcessor { return k.preprocessors }
-func (k *Kernel) Parsers() []plugin.Parser             { return k.parsers }
-func (k *Kernel) Transformer() plugin.Transformer      { return k.transformer }
-func (k *Kernel) Filters() []plugin.Filter             { return k.filters }
-func (k *Kernel) LinkExtractor() plugin.LinkExtractor  { return k.linkExtractor }
+
+// Parsers は Init 済みの Parser 一覧を返す。
+func (k *Kernel) Parsers() []plugin.Parser { return k.parsers }
+
+// Transformer は Init 済みの Transformer を返す。
+func (k *Kernel) Transformer() plugin.Transformer { return k.transformer }
+
+// Filters は Init 済みの Filter 一覧を返す。
+func (k *Kernel) Filters() []plugin.Filter { return k.filters }
+
+// LinkExtractor は Init 済みの LinkExtractor を返す。
+func (k *Kernel) LinkExtractor() plugin.LinkExtractor { return k.linkExtractor }

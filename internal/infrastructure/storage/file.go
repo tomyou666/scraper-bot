@@ -16,14 +16,20 @@ import (
 
 // FileWriter は OutputConfig に従い *model.Result を保存する。
 type FileWriter struct {
-	dir         string
+	// dir は出力ディレクトリ。
+	dir string
+	// filePattern はファイル名テンプレート。
 	filePattern string
-	formats     []model.OutputFormat
+	// formats は書き出す OutputFormat の一覧。
+	formats []model.OutputFormat
 
-	mu  sync.Mutex
+	// mu は seq 更新の排他制御。
+	mu sync.Mutex
+	// seq は次に割り当てる連番。
 	seq int
 }
 
+// NewFileWriter は OutputConfig とフォーマット一覧から FileWriter を構築する。
 func NewFileWriter(out model.OutputConfig, formats []model.OutputFormat) *FileWriter {
 	return &FileWriter{
 		dir:         out.Dir,
@@ -59,6 +65,7 @@ func (w *FileWriter) Write(r *model.Result) error {
 
 var pathSanitizer = regexp.MustCompile(`[^a-zA-Z0-9_\-]+`)
 
+// render は 1 フォーマット分のファイル名と本文を生成する。
 func (w *FileWriter) render(r *model.Result, f model.OutputFormat, seq int) (string, string, error) {
 	ext := ""
 	body := ""
@@ -110,6 +117,7 @@ func (w *FileWriter) render(r *model.Result, f model.OutputFormat, seq int) (str
 	return name, body, nil
 }
 
+// buildFileName はテンプレートと URL から出力ファイル名を組み立てる。
 func buildFileName(pattern string, seq int, u *url.URL, ext string) string {
 	host := ""
 	path := ""
@@ -130,6 +138,7 @@ func buildFileName(pattern string, seq int, u *url.URL, ext string) string {
 	return r.Replace(pattern)
 }
 
+// urlString は nil 安全に URL 文字列を返す。
 func urlString(u *url.URL) string {
 	if u == nil {
 		return ""

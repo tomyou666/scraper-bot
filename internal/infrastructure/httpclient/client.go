@@ -16,8 +16,10 @@ import (
 
 // Client は domain.plugin.HTTPClient と core が必要とする Get の両方を提供する。
 type Client struct {
+	// cfg はタイムアウト・リトライ設定。
 	cfg model.RequestConfig
-	hc  *http.Client
+	// hc は net/http のクライアント実体。
+	hc *http.Client
 }
 
 // New は RequestConfig を元に *http.Client をラップした実装を返す。
@@ -88,6 +90,7 @@ func (c *Client) Get(ctx context.Context, u *url.URL, headers map[string]string)
 	return nil, fmt.Errorf("HTTP取得失敗 (url=%s): %w", u.String(), lastErr)
 }
 
+// doOnce はリトライなしで 1 回 GET し model.Response を組み立てる。
 func (c *Client) doOnce(ctx context.Context, u *url.URL, headers map[string]string) (*model.Response, error) {
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
@@ -117,6 +120,7 @@ func (c *Client) doOnce(ctx context.Context, u *url.URL, headers map[string]stri
 	}, nil
 }
 
+// flattenHeaders は http.Header を先頭値のみの map に変換する。
 func flattenHeaders(h http.Header) map[string]string {
 	out := make(map[string]string, len(h))
 	for k, v := range h {

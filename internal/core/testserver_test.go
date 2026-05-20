@@ -43,6 +43,7 @@ func newTestWebServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
+// serveTestFile は testdata/html から 1 ファイルを読み込んで HTTP レスポンスする。
 func serveTestFile(t *testing.T, w http.ResponseWriter, name, contentType string) {
 	t.Helper()
 	path := filepath.Join(testdataDir(t), "html", name)
@@ -55,6 +56,7 @@ func serveTestFile(t *testing.T, w http.ResponseWriter, name, contentType string
 	_, _ = w.Write(b)
 }
 
+// testdataDir はリポジトリルートの testdata ディレクトリパスを返す。
 func testdataDir(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)

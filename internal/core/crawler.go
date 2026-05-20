@@ -22,24 +22,36 @@ type ResultSink func(res *model.Result)
 
 // Crawler は BFS で URL を巡回し、各 URL でパイプラインを実行する。
 type Crawler struct {
-	cfg      *model.Config
-	kernel   *Kernel
-	fetcher  Fetcher
+	// cfg はクロール設定を含む実行設定。
+	cfg *model.Config
+	// kernel はプラグインカーネル。
+	kernel *Kernel
+	// fetcher は HTTP 取得実装。
+	fetcher Fetcher
+	// pipeline は 1 URL あたりの処理パイプライン。
 	pipeline *Pipeline
-	robots   RobotsChecker
+	// robots は robots.txt 判定（nil 可）。
+	robots RobotsChecker
 
+	// includeRe は許可パス正規表現（コンパイル済み）。
 	includeRe []*regexp.Regexp
+	// excludeRe は除外パス正規表現（コンパイル済み）。
 	excludeRe []*regexp.Regexp
 
+	// sink は各ページの Result 受け取り先。
 	sink ResultSink
 }
 
 // CrawlStats はクロールの最終サマリ。
 type CrawlStats struct {
-	Enqueued  int
+	// Enqueued はキューに投入した URL 数。
+	Enqueued int
+	// Succeeded はパイプライン成功した URL 数。
 	Succeeded int
-	Failed    int
-	Skipped   int
+	// Failed はパイプライン失敗した URL 数。
+	Failed int
+	// Skipped は重複・フィルタ・上限でスキップした URL 数。
+	Skipped int
 }
 
 // NewCrawler はクローラを構築する。robots は nil 可（その場合は判定をスキップ）。
@@ -66,8 +78,11 @@ func NewCrawler(k *Kernel, fetcher Fetcher, robots RobotsChecker, sink ResultSin
 	return c
 }
 
+// job はクロールキュー内の 1 件分の作業単位。
 type job struct {
-	url   *url.URL
+	// url は処理対象 URL。
+	url *url.URL
+	// depth はシードからの深度。
 	depth int
 }
 

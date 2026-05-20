@@ -16,10 +16,13 @@ func init() {
 	core.RegisterFilter("selector", func() pluginpkg.Filter { return &filter{} })
 }
 
+// filter は CSS セレクタ絞り込み用 P7 Filter の実装。
 type filter struct {
+	// host は Init で受け取る Host。
 	host pluginpkg.Host
 }
 
+// Metadata は plugin.Filter.Metadata の実装。
 func (f *filter) Metadata() pluginpkg.Metadata {
 	return pluginpkg.Metadata{
 		Name:        "selector",
@@ -29,13 +32,16 @@ func (f *filter) Metadata() pluginpkg.Metadata {
 	}
 }
 
+// Init は plugin.Plugin.Init の実装。
 func (f *filter) Init(_ context.Context, host pluginpkg.Host) error {
 	f.host = host
 	return nil
 }
 
+// Close は plugin.Plugin.Close の実装。
 func (f *filter) Close(_ context.Context) error { return nil }
 
+// Filter は content.selector で DOM を絞り込む。
 func (f *filter) Filter(_ context.Context, c *model.Content) (*model.Content, error) {
 	sel, ok := f.host.Config("content.selector")
 	if !ok || sel == "" {

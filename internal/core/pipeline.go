@@ -19,7 +19,9 @@ type Fetcher interface {
 
 // Pipeline は 1 URL 分のスクレイピング処理を実行する。
 type Pipeline struct {
-	kernel  *Kernel
+	// kernel はプラグインと設定へのアクセス。
+	kernel *Kernel
+	// fetcher は HTTP 取得実装。
 	fetcher Fetcher
 }
 
@@ -30,8 +32,10 @@ func NewPipeline(k *Kernel, f Fetcher) *Pipeline {
 
 // PipelineOutput はパイプライン出力。リンクは P8 抽出結果。
 type PipelineOutput struct {
+	// Result は P6 まで完了した最終結果。
 	Result *model.Result
-	Links  []*url.URL
+	// Links は P8 で抽出した追跡候補 URL。
+	Links []*url.URL
 }
 
 // Run は単一 URL のパイプラインを実行する。
@@ -88,6 +92,7 @@ func (p *Pipeline) Run(ctx context.Context, req *model.Request) (*PipelineOutput
 	return &PipelineOutput{Result: result, Links: links}, nil
 }
 
+// selectParser は Content-Type と URL から適用する Parser を選ぶ。
 func (p *Pipeline) selectParser(res *model.Response) (plugin.Parser, error) {
 	ct := strings.ToLower(res.ContentType)
 	cfg := p.kernel.Config()

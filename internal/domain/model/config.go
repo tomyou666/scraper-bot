@@ -11,63 +11,109 @@ import (
 	"github.com/andybalholm/cascadia"
 )
 
+// Config は scraperbot 全体の実行設定を表すルート構造体。
 type Config struct {
-	Request RequestConfig   `yaml:"request"`
-	Content ContentConfig   `yaml:"content"`
-	PDF     PDFConfig       `yaml:"pdf"`
-	Crawl   CrawlConfig     `yaml:"crawl"`
+	// Request は HTTP 取得に関する設定。
+	Request RequestConfig `yaml:"request"`
+	// Content は本文抽出・出力フォーマットに関する設定。
+	Content ContentConfig `yaml:"content"`
+	// PDF は PDF 取得・解析に関する設定。
+	PDF PDFConfig `yaml:"pdf"`
+	// Crawl はサイト横断クロールに関する設定。
+	Crawl CrawlConfig `yaml:"crawl"`
+	// Plugins は使用するプラグイン名の選択。
 	Plugins PluginSelection `yaml:"plugins"`
-	Targets []string        `yaml:"targets"`
-	Output  OutputConfig    `yaml:"output"`
+	// Targets は処理対象 URL の一覧。
+	Targets []string `yaml:"targets"`
+	// Output は結果ファイルの出力先設定。
+	Output OutputConfig `yaml:"output"`
 }
 
+// RequestConfig は HTTP リクエストのタイムアウト・リトライ・ヘッダを保持する。
 type RequestConfig struct {
-	Headers       map[string]string `yaml:"headers"`
-	Timeout       time.Duration     `yaml:"timeout"`
-	RetryCount    int               `yaml:"retry_count"`
-	RetryInterval time.Duration     `yaml:"retry_interval"`
+	// Headers は追加するリクエストヘッダ（キーはそのまま送信される）。
+	Headers map[string]string `yaml:"headers"`
+	// Timeout は 1 リクエストあたりの最大待ち時間。
+	Timeout time.Duration `yaml:"timeout"`
+	// RetryCount は失敗時の再試行回数（0 は再試行なし）。
+	RetryCount int `yaml:"retry_count"`
+	// RetryInterval は再試行の間隔。
+	RetryInterval time.Duration `yaml:"retry_interval"`
 }
 
+// ContentConfig は HTML 本文の抽出方針と出力フォーマットを保持する。
 type ContentConfig struct {
-	Formats         []OutputFormat `yaml:"formats"`
-	OnlyMainContent bool           `yaml:"only_main_content"`
-	IncludeTags     []string       `yaml:"include_tags"`
-	ExcludeTags     []string       `yaml:"exclude_tags"`
-	Selector        string         `yaml:"selector"`
-	ExtractLinks    bool           `yaml:"extract_links"`
-	ExtractMetadata bool           `yaml:"extract_metadata"`
+	// Formats は書き出す出力フォーマットの一覧。
+	Formats []OutputFormat `yaml:"formats"`
+	// OnlyMainContent はメインコンテンツ領域のみを抽出するか。
+	OnlyMainContent bool `yaml:"only_main_content"`
+	// IncludeTags は抽出対象に含める HTML タグ名。
+	IncludeTags []string `yaml:"include_tags"`
+	// ExcludeTags は抽出から除外する HTML タグ名。
+	ExcludeTags []string `yaml:"exclude_tags"`
+	// Selector は本文を絞り込む CSS セレクタ（空なら全体）。
+	Selector string `yaml:"selector"`
+	// ExtractLinks は結果にリンク一覧を含めるか。
+	ExtractLinks bool `yaml:"extract_links"`
+	// ExtractMetadata はメタデータ抽出を行うか。
+	ExtractMetadata bool `yaml:"extract_metadata"`
 }
 
+// PDFConfig は PDF 処理の有効化と解析モードを保持する。
 type PDFConfig struct {
-	Enabled  bool         `yaml:"enabled"`
-	Mode     PDFParseMode `yaml:"mode"`
-	MaxPages int          `yaml:"max_pages"`
-	Output   PDFOutput    `yaml:"output"`
+	// Enabled は PDF の取得・解析を許可するか。
+	Enabled bool `yaml:"enabled"`
+	// Mode は PDF 解析モード（PDFParseMode を参照）。
+	Mode PDFParseMode `yaml:"mode"`
+	// MaxPages は解析する最大ページ数（0 は無制限）。
+	MaxPages int `yaml:"max_pages"`
+	// Output は PDF からの出力形式（PDFOutput を参照）。
+	Output PDFOutput `yaml:"output"`
 }
 
+// CrawlConfig は BFS クロールの深度・件数・フィルタを保持する。
 type CrawlConfig struct {
-	Enabled          bool          `yaml:"enabled"`
-	MaxDepth         int           `yaml:"max_depth"`
-	MaxPages         int           `yaml:"max_pages"`
-	IncludePaths     []string      `yaml:"include_paths"`
-	ExcludePaths     []string      `yaml:"exclude_paths"`
-	AllowExternal    bool          `yaml:"allow_external_links"`
-	AllowSubdomains  bool          `yaml:"allow_subdomains"`
-	RequestDelay     time.Duration `yaml:"request_delay"`
-	MaxConcurrency   int           `yaml:"max_concurrency"`
-	RespectRobotsTxt bool          `yaml:"respect_robots_txt"`
+	// Enabled は複数 URL のクロールを有効にするか。
+	Enabled bool `yaml:"enabled"`
+	// MaxDepth はシードからの最大リンク深度。
+	MaxDepth int `yaml:"max_depth"`
+	// MaxPages は訪問する最大ページ数。
+	MaxPages int `yaml:"max_pages"`
+	// IncludePaths は許可する URL パスの正規表現（空なら制限なし）。
+	IncludePaths []string `yaml:"include_paths"`
+	// ExcludePaths は除外する URL パスの正規表現。
+	ExcludePaths []string `yaml:"exclude_paths"`
+	// AllowExternal は登録ドメイン外へのリンク追跡を許可するか。
+	AllowExternal bool `yaml:"allow_external_links"`
+	// AllowSubdomains はサブドメインへの追跡を許可するか。
+	AllowSubdomains bool `yaml:"allow_subdomains"`
+	// RequestDelay は連続リクエスト間の待機時間（>0 のとき並行度は 1 に制限される）。
+	RequestDelay time.Duration `yaml:"request_delay"`
+	// MaxConcurrency は同時に走るワーカー数。
+	MaxConcurrency int `yaml:"max_concurrency"`
+	// RespectRobotsTxt は robots.txt に従うか。
+	RespectRobotsTxt bool `yaml:"respect_robots_txt"`
 }
 
+// PluginSelection はパイプライン各段で使うプラグイン名を保持する。
 type PluginSelection struct {
+	// PreProcessors は P2 で実行する PreProcessor 名の順序付き一覧。
 	PreProcessors []string `yaml:"preprocessors"`
-	Parsers       []string `yaml:"parsers"`
-	Transformer   string   `yaml:"transformer"`
-	Filters       []string `yaml:"filters"`
-	LinkExtractor string   `yaml:"link_extractor"`
+	// Parsers は P5 で登録される Parser 名の一覧。
+	Parsers []string `yaml:"parsers"`
+	// Transformer は P6 で使う Transformer 名（1 件）。
+	Transformer string `yaml:"transformer"`
+	// Filters は P7 で実行する Filter 名の順序付き一覧。
+	Filters []string `yaml:"filters"`
+	// LinkExtractor は P8 で使う LinkExtractor 名（1 件）。
+	LinkExtractor string `yaml:"link_extractor"`
 }
 
+// OutputConfig は結果ファイルの保存先と命名規則を保持する。
 type OutputConfig struct {
-	Dir         string `yaml:"dir"`
+	// Dir は出力ディレクトリのパス。
+	Dir string `yaml:"dir"`
+	// FilePattern はファイル名テンプレート（{seq},{host},{path},{ext} が使える）。
 	FilePattern string `yaml:"file_pattern"`
 }
 
@@ -140,6 +186,7 @@ func (c *Config) Validate() error {
 	return errors.Join(errs...)
 }
 
+// validateTargets は targets の件数と URL 形式を検証する。
 func (c *Config) validateTargets() []error {
 	if len(c.Targets) == 0 {
 		return []error{errors.New("targets: 少なくとも1件のURLが必要です")}
@@ -157,6 +204,7 @@ func (c *Config) validateTargets() []error {
 	return errs
 }
 
+// validateRequest は request セクションの数値・ヘッダを検証する。
 func (c *Config) validateRequest() []error {
 	var errs []error
 	if c.Request.Timeout < time.Second || c.Request.Timeout > 300*time.Second {
@@ -179,6 +227,7 @@ func (c *Config) validateRequest() []error {
 	return errs
 }
 
+// validateContent は content セクションのフォーマット・タグ・セレクタを検証する。
 func (c *Config) validateContent() []error {
 	var errs []error
 	seen := map[OutputFormat]bool{}
@@ -209,6 +258,7 @@ func (c *Config) validateContent() []error {
 	return errs
 }
 
+// validatePDF は pdf セクションの mode・output・max_pages を検証する。
 func (c *Config) validatePDF() []error {
 	var errs []error
 	if !c.PDF.Mode.Valid() {
@@ -223,6 +273,7 @@ func (c *Config) validatePDF() []error {
 	return errs
 }
 
+// validateCrawl は crawl セクションの深度・件数・正規表現を検証する。
 func (c *Config) validateCrawl() []error {
 	var errs []error
 	if c.Crawl.MaxDepth < 0 || c.Crawl.MaxDepth > 10 {
@@ -252,6 +303,7 @@ func (c *Config) validateCrawl() []error {
 
 var placeholderRe = regexp.MustCompile(`\{([a-zA-Z0-9_]+)\}`)
 
+// validateOutput は output.file_pattern のプレースホルダを検証する。
 func (c *Config) validateOutput() []error {
 	allowed := map[string]bool{"seq": true, "host": true, "path": true, "ext": true}
 	var errs []error

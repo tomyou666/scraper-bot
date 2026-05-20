@@ -19,11 +19,15 @@ func init() {
 	core.RegisterTransformer("markdown", func() plugin.Transformer { return &transformer{} })
 }
 
+// transformer は Markdown 変換用 P6 Transformer の実装。
 type transformer struct {
+	// host は Init で受け取る Host。
 	host plugin.Host
+	// conv は html-to-markdown コンバータ。
 	conv *md.Converter
 }
 
+// Metadata は plugin.Transformer.Metadata の実装。
 func (t *transformer) Metadata() plugin.Metadata {
 	return plugin.Metadata{
 		Name:        "markdown",
@@ -33,14 +37,17 @@ func (t *transformer) Metadata() plugin.Metadata {
 	}
 }
 
+// Init は plugin.Plugin.Init の実装。
 func (t *transformer) Init(_ context.Context, host plugin.Host) error {
 	t.host = host
 	t.conv = md.NewConverter("", true, nil)
 	return nil
 }
 
+// Close は plugin.Plugin.Close の実装。
 func (t *transformer) Close(_ context.Context) error { return nil }
 
+// Transform は Content を model.Result（Markdown 等）に変換する。
 func (t *transformer) Transform(_ context.Context, c *model.Content) (*model.Result, error) {
 	r := &model.Result{
 		URL:      c.URL,

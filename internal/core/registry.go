@@ -11,14 +11,21 @@ import (
 // Registry は種類別にプラグインファクトリを保持するレジストリ。
 // プラグインは init() から RegisterXxx を呼ぶことで自己登録する。
 type Registry struct {
-	mu             sync.RWMutex
-	preprocessors  map[string]func() plugin.PreProcessor
-	parsers        map[string]func() plugin.Parser
-	transformers   map[string]func() plugin.Transformer
-	filters        map[string]func() plugin.Filter
+	// mu はマップ操作の排他制御に使う。
+	mu sync.RWMutex
+	// preprocessors は PreProcessor 名→ファクトリ。
+	preprocessors map[string]func() plugin.PreProcessor
+	// parsers は Parser 名→ファクトリ。
+	parsers map[string]func() plugin.Parser
+	// transformers は Transformer 名→ファクトリ。
+	transformers map[string]func() plugin.Transformer
+	// filters は Filter 名→ファクトリ。
+	filters map[string]func() plugin.Filter
+	// linkextractors は LinkExtractor 名→ファクトリ。
 	linkextractors map[string]func() plugin.LinkExtractor
 }
 
+// newRegistry は空のプラグインマップを持つレジストリを生成する。
 func newRegistry() *Registry {
 	return &Registry{
 		preprocessors:  map[string]func() plugin.PreProcessor{},
@@ -67,19 +74,28 @@ func RegisterLinkExtractor(name string, f func() plugin.LinkExtractor) {
 func RegisterPreProcessorTo(r *Registry, name string, f func() plugin.PreProcessor) {
 	r.registerPreProcessor(name, f)
 }
+
+// RegisterParserTo は任意のレジストリへ Parser を登録する。
 func RegisterParserTo(r *Registry, name string, f func() plugin.Parser) {
 	r.registerParser(name, f)
 }
+
+// RegisterTransformerTo は任意のレジストリへ Transformer を登録する。
 func RegisterTransformerTo(r *Registry, name string, f func() plugin.Transformer) {
 	r.registerTransformer(name, f)
 }
+
+// RegisterFilterTo は任意のレジストリへ Filter を登録する。
 func RegisterFilterTo(r *Registry, name string, f func() plugin.Filter) {
 	r.registerFilter(name, f)
 }
+
+// RegisterLinkExtractorTo は任意のレジストリへ LinkExtractor を登録する。
 func RegisterLinkExtractorTo(r *Registry, name string, f func() plugin.LinkExtractor) {
 	r.registerLinkExtractor(name, f)
 }
 
+// registerPreProcessor は PreProcessor ファクトリを登録する（重複時 panic）。
 func (r *Registry) registerPreProcessor(name string, f func() plugin.PreProcessor) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -89,6 +105,7 @@ func (r *Registry) registerPreProcessor(name string, f func() plugin.PreProcesso
 	r.preprocessors[name] = f
 }
 
+// registerParser は Parser ファクトリを登録する（重複時 panic）。
 func (r *Registry) registerParser(name string, f func() plugin.Parser) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -98,6 +115,7 @@ func (r *Registry) registerParser(name string, f func() plugin.Parser) {
 	r.parsers[name] = f
 }
 
+// registerTransformer は Transformer ファクトリを登録する（重複時 panic）。
 func (r *Registry) registerTransformer(name string, f func() plugin.Transformer) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -107,6 +125,7 @@ func (r *Registry) registerTransformer(name string, f func() plugin.Transformer)
 	r.transformers[name] = f
 }
 
+// registerFilter は Filter ファクトリを登録する（重複時 panic）。
 func (r *Registry) registerFilter(name string, f func() plugin.Filter) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -116,6 +135,7 @@ func (r *Registry) registerFilter(name string, f func() plugin.Filter) {
 	r.filters[name] = f
 }
 
+// registerLinkExtractor は LinkExtractor ファクトリを登録する（重複時 panic）。
 func (r *Registry) registerLinkExtractor(name string, f func() plugin.LinkExtractor) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -127,6 +147,7 @@ func (r *Registry) registerLinkExtractor(name string, f func() plugin.LinkExtrac
 
 // 以下は登録名から新しいインスタンスを生成するファクトリ呼び出し群。
 
+// NewPreProcessor は登録名から PreProcessor インスタンスを生成する。
 func (r *Registry) NewPreProcessor(name string) (plugin.PreProcessor, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -137,6 +158,7 @@ func (r *Registry) NewPreProcessor(name string) (plugin.PreProcessor, error) {
 	return f(), nil
 }
 
+// NewParser は登録名から Parser インスタンスを生成する。
 func (r *Registry) NewParser(name string) (plugin.Parser, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -147,6 +169,7 @@ func (r *Registry) NewParser(name string) (plugin.Parser, error) {
 	return f(), nil
 }
 
+// NewTransformer は登録名から Transformer インスタンスを生成する。
 func (r *Registry) NewTransformer(name string) (plugin.Transformer, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -157,6 +180,7 @@ func (r *Registry) NewTransformer(name string) (plugin.Transformer, error) {
 	return f(), nil
 }
 
+// NewFilter は登録名から Filter インスタンスを生成する。
 func (r *Registry) NewFilter(name string) (plugin.Filter, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -167,6 +191,7 @@ func (r *Registry) NewFilter(name string) (plugin.Filter, error) {
 	return f(), nil
 }
 
+// NewLinkExtractor は登録名から LinkExtractor インスタンスを生成する。
 func (r *Registry) NewLinkExtractor(name string) (plugin.LinkExtractor, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -228,6 +253,7 @@ func (r *Registry) Names(kind plugin.Kind) []string {
 	return out
 }
 
+// keysOf は map のキー集合を返す。
 func keysOf[V any](m map[string]V) map[string]struct{} {
 	out := make(map[string]struct{}, len(m))
 	for k := range m {
@@ -238,6 +264,7 @@ func keysOf[V any](m map[string]V) map[string]struct{} {
 
 // テスト用にレジストリを差し替える小道具。
 // 既存実装に副作用がないように、関数呼び出し側で defer restore する想定。
+// swapDefaultRegistry はテスト用に defaultRegistry を差し替え、復元関数を返す。
 func swapDefaultRegistry(r *Registry) (restore func()) {
 	old := defaultRegistry
 	defaultRegistry = r

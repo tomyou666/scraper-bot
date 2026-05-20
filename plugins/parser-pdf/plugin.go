@@ -17,10 +17,13 @@ func init() {
 	core.RegisterParser("pdf", func() plugin.Parser { return &parser{} })
 }
 
+// parser は PDF 用 P5 Parser の実装。
 type parser struct {
+	// host は Init で受け取る Host。
 	host plugin.Host
 }
 
+// Metadata は plugin.Parser.Metadata の実装。
 func (p *parser) Metadata() plugin.Metadata {
 	return plugin.Metadata{
 		Name:        "pdf",
@@ -30,13 +33,16 @@ func (p *parser) Metadata() plugin.Metadata {
 	}
 }
 
+// Init は plugin.Plugin.Init の実装。
 func (p *parser) Init(_ context.Context, host plugin.Host) error {
 	p.host = host
 	return nil
 }
 
+// Close は plugin.Plugin.Close の実装。
 func (p *parser) Close(_ context.Context) error { return nil }
 
+// CanParse は application/pdf または .pdf パスを判定する。
 func (p *parser) CanParse(res *model.Response) bool {
 	ct := strings.ToLower(res.ContentType)
 	if strings.Contains(ct, "application/pdf") {

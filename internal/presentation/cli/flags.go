@@ -11,58 +11,98 @@ import (
 
 // Flags は CLI 引数のパース結果を保持する。
 type Flags struct {
+	// ConfigPath は --config で指定した YAML パス。
 	ConfigPath string
 
+	// Targets は --url または位置引数で指定した URL 一覧。
 	Targets []string
+	// Headers は --header で指定したリクエストヘッダ。
 	Headers map[string]string
 
-	Timeout       time.Duration
-	RetryCount    int
+	// Timeout は --timeout（0 なら YAML/デフォルトを維持）。
+	Timeout time.Duration
+	// RetryCount は --retry（負なら未指定）。
+	RetryCount int
+	// RetryInterval は --retry-interval。
 	RetryInterval time.Duration
 
-	Formats         []model.OutputFormat
+	// Formats は --format で指定した出力フォーマット。
+	Formats []model.OutputFormat
+	// OnlyMainContent は --only-main の 3 値フラグ。
 	OnlyMainContent boolFlag
-	IncludeTags     stringSlice
-	ExcludeTags     stringSlice
-	Selector        string
-	ExtractLinks    boolFlag
+	// IncludeTags は --include-tag の繰り返し指定。
+	IncludeTags stringSlice
+	// ExcludeTags は --exclude-tag の繰り返し指定。
+	ExcludeTags stringSlice
+	// Selector は --selector。
+	Selector string
+	// ExtractLinks は --extract-links。
+	ExtractLinks boolFlag
+	// ExtractMetadata は --extract-metadata。
 	ExtractMetadata boolFlag
 
-	PDF         boolFlag
-	PDFMode     string
+	// PDF は --pdf。
+	PDF boolFlag
+	// PDFMode は --pdf-mode（fast/auto/ocr）。
+	PDFMode string
+	// PDFMaxPages は --pdf-max-pages。
 	PDFMaxPages int
-	PDFOutput   string
+	// PDFOutput は --pdf-output（text/markdown/raw）。
+	PDFOutput string
 
-	Crawl            boolFlag
-	MaxDepth         int
-	MaxPages         int
-	IncludePaths     stringSlice
-	ExcludePaths     stringSlice
-	AllowExternal    boolFlag
-	AllowSubdomains  boolFlag
-	RequestDelay     time.Duration
-	MaxConcurrency   int
+	// Crawl は --crawl。
+	Crawl boolFlag
+	// MaxDepth は --max-depth。
+	MaxDepth int
+	// MaxPages は --max-pages。
+	MaxPages int
+	// IncludePaths は --include-path。
+	IncludePaths stringSlice
+	// ExcludePaths は --exclude-path。
+	ExcludePaths stringSlice
+	// AllowExternal は --allow-external。
+	AllowExternal boolFlag
+	// AllowSubdomains は --allow-subdomains。
+	AllowSubdomains boolFlag
+	// RequestDelay は --delay。
+	RequestDelay time.Duration
+	// MaxConcurrency は --concurrency。
+	MaxConcurrency int
+	// RespectRobotsTxt は --respect-robots。
 	RespectRobotsTxt boolFlag
 
+	// PreProcessors は --preprocessor。
 	PreProcessors stringSlice
-	Parsers       stringSlice
-	Transformer   string
-	Filters       stringSlice
+	// Parsers は --parser。
+	Parsers stringSlice
+	// Transformer は --transformer。
+	Transformer string
+	// Filters は --filter。
+	Filters stringSlice
+	// LinkExtractor は --link-extractor。
 	LinkExtractor string
 
-	OutputDir     string
+	// OutputDir は --output-dir。
+	OutputDir string
+	// OutputPattern は --output-pattern。
 	OutputPattern string
 
+	// Stdout は --stdout（単一 URL 時に標準出力へ出す）。
 	Stdout bool
 }
 
 // boolFlag は flag.Bool では区別できない「指定されたか」を扱う 3 値型。
 type boolFlag struct {
+	// set は CLI で明示指定されたか。
 	set bool
-	v   bool
+	// v は真偽値。
+	v bool
 }
 
+// String は flag.Value の文字列表現。
 func (b *boolFlag) String() string { return fmt.Sprintf("%t", b.v) }
+
+// Set は flag.Value のパース（true/false/1/0 等）。
 func (b *boolFlag) Set(s string) error {
 	switch strings.ToLower(s) {
 	case "true", "1", "yes", "":
@@ -75,14 +115,21 @@ func (b *boolFlag) Set(s string) error {
 	b.set = true
 	return nil
 }
+
+// IsBoolFlag は flag パッケージ向けのブールフラグ識別。
 func (b *boolFlag) IsBoolFlag() bool { return true }
 
 type stringSlice struct {
-	set    bool
+	// set は 1 回以上 Set されたか。
+	set bool
+	// values は蓄積した文字列。
 	values []string
 }
 
+// String は flag.Value の文字列表現。
 func (s *stringSlice) String() string { return strings.Join(s.values, ",") }
+
+// Set は繰り返し指定を values に追加する。
 func (s *stringSlice) Set(v string) error {
 	s.values = append(s.values, v)
 	s.set = true
@@ -90,10 +137,14 @@ func (s *stringSlice) Set(v string) error {
 }
 
 type headerFlag struct {
+	// out は KEY=VAL をパースしたヘッダマップ。
 	out map[string]string
 }
 
+// String は flag.Value（常に空）。
 func (h *headerFlag) String() string { return "" }
+
+// Set は KEY=VAL 形式の 1 ヘッダを out に追加する。
 func (h *headerFlag) Set(v string) error {
 	idx := strings.Index(v, "=")
 	if idx < 0 {
@@ -107,10 +158,14 @@ func (h *headerFlag) Set(v string) error {
 }
 
 type formatFlag struct {
+	// out は --format の蓄積先スライスへのポインタ。
 	out *[]model.OutputFormat
 }
 
+// String は flag.Value（常に空）。
 func (f *formatFlag) String() string { return "" }
+
+// Set は 1 つの OutputFormat を out に追加する。
 func (f *formatFlag) Set(v string) error {
 	*f.out = append(*f.out, model.OutputFormat(v))
 	return nil
