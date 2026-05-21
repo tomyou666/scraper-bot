@@ -19,6 +19,8 @@ const (
 	KindFilter Kind = "filter"
 	// KindLinkExtractor は P8 リンク抽出。
 	KindLinkExtractor Kind = "link_extractor"
+	// KindFetcher は URL 取得（ページ・robots.txt 等）。
+	KindFetcher Kind = "fetcher"
 )
 
 // Metadata はプラグインの識別情報を保持する。

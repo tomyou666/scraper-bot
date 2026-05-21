@@ -95,8 +95,26 @@ type CrawlConfig struct {
 	RespectRobotsTxt bool `yaml:"respect_robots_txt"`
 }
 
+// FetcherConfig は chromium フェッチャ専用の実行時設定を保持する。
+type FetcherConfig struct {
+	// BrowserPath は使用するブラウザ実行ファイルのパス（空なら自動検出）。
+	BrowserPath string `yaml:"browser_path"`
+	// UserAgent は chromium フェッチ時の User-Agent（空なら request.headers または既定値）。
+	UserAgent string `yaml:"user_agent"`
+	// Headless はヘッドレス実行を有効にするか。
+	Headless bool `yaml:"headless"`
+	// WaitVisibleSelector は取得前に可視になるまで待機する CSS セレクタ（空なら待機しない）。
+	WaitVisibleSelector string `yaml:"wait_visible_selector"`
+	// WaitTimeout は WaitVisibleSelector の待機上限。
+	WaitTimeout time.Duration `yaml:"wait_timeout"`
+}
+
 // PluginSelection はパイプライン各段で使うプラグイン名を保持する。
 type PluginSelection struct {
+	// Fetcher は URL フェッチ実装の種別（http / chromium）。
+	Fetcher FetcherKind `yaml:"fetcher"`
+	// FetcherConfig は Fetcher が chromium のときに使う実行時設定。
+	FetcherConfig FetcherConfig `yaml:"fetcher_config"`
 	// PreProcessors は P2 で実行する PreProcessor 名の順序付き一覧。
 	PreProcessors []string `yaml:"preprocessors"`
 	// Parsers は P5 で登録される Parser 名の一覧。
@@ -154,6 +172,11 @@ func Default() Config {
 			RespectRobotsTxt: true,
 		},
 		Plugins: PluginSelection{
+			Fetcher: FetcherHTTP,
+			FetcherConfig: FetcherConfig{
+				Headless:    true,
+				WaitTimeout: 5 * time.Second,
+			},
 			PreProcessors: nil,
 			Parsers:       []string{"html", "pdf"},
 			Transformer:   "markdown",
@@ -177,6 +200,7 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.validateContent()...)
 	errs = append(errs, c.validatePDF()...)
 	errs = append(errs, c.validateCrawl()...)
+	errs = append(errs, c.validatePlugins()...)
 	errs = append(errs, c.validateOutput()...)
 
 	if c.Crawl.RequestDelay > 0 && c.Crawl.MaxConcurrency != 1 {
@@ -302,6 +326,26 @@ func (c *Config) validateCrawl() []error {
 }
 
 var placeholderRe = regexp.MustCompile(`\{([a-zA-Z0-9_]+)\}`)
+
+// validatePlugins は plugins セクションのフェッチャ種別と fetcher_config を検証する。
+func (c *Config) validatePlugins() []error {
+	var errs []error
+	fetcher := c.Plugins.Fetcher
+	if fetcher == "" {
+		fetcher = FetcherHTTP
+	}
+	if !fetcher.Valid() {
+		errs = append(errs, fmt.Errorf("plugins.fetcher: 不正な値 %q (http / chromium)", fetcher))
+	}
+	if c.Plugins.FetcherConfig.WaitTimeout < 0 || c.Plugins.FetcherConfig.WaitTimeout > 120*time.Second {
+		errs = append(errs, fmt.Errorf("plugins.fetcher_config.wait_timeout: 0s 以上 120s 以下 (現在: %s)", c.Plugins.FetcherConfig.WaitTimeout))
+	}
+	if strings.TrimSpace(c.Plugins.FetcherConfig.UserAgent) != "" &&
+		strings.ContainsAny(c.Plugins.FetcherConfig.UserAgent, "\r\n") {
+		errs = append(errs, errors.New("plugins.fetcher_config.user_agent: 改行を含む値は許可されません"))
+	}
+	return errs
+}
 
 // validateOutput は output.file_pattern のプレースホルダを検証する。
 func (c *Config) validateOutput() []error {

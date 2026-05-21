@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -76,6 +77,9 @@ func (c *Client) Get(ctx context.Context, u *url.URL, headers map[string]string)
 		} else {
 			lastErr = fmt.Errorf("http %d", res.StatusCode)
 		}
+		if err != nil && !isRetryableHTTPError(err) {
+			break
+		}
 		if i+1 < attempts {
 			select {
 			case <-ctx.Done():
@@ -118,6 +122,18 @@ func (c *Client) doOnce(ctx context.Context, u *url.URL, headers map[string]stri
 		Body:        body,
 		FetchedAt:   time.Now(),
 	}, nil
+}
+
+// isRetryableHTTPError はタイムアウト・キャンセルなど、再試行しても改善しないエラーを判定する。
+func isRetryableHTTPError(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return false
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return false
+	}
+	return true
 }
 
 // flattenHeaders は http.Header を先頭値のみの map に変換する。

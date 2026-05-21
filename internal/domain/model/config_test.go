@@ -128,6 +128,40 @@ func TestConfig_Validate(t *testing.T) {
 		assert.Equal(t, 1, c.Crawl.MaxConcurrency, "request_delay>0 のとき concurrency は強制で1")
 	})
 
+	t.Run("異常系: plugins.fetcher が列挙外だとエラー", func(t *testing.T) {
+		c := Default()
+		c.Targets = []string{"https://example.com/"}
+		c.Plugins.Fetcher = "selenium"
+
+		err := c.Validate()
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "plugins.fetcher")
+	})
+
+	t.Run("異常系: plugins.fetcher_config.wait_timeout が範囲外だとエラー", func(t *testing.T) {
+		c := Default()
+		c.Targets = []string{"https://example.com/"}
+		c.Plugins.FetcherConfig.WaitTimeout = 200 * time.Second
+
+		err := c.Validate()
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "wait_timeout")
+	})
+
+	t.Run("正常系: デフォルトの fetcher は http", func(t *testing.T) {
+		c := Default()
+		c.Targets = []string{"https://example.com/"}
+
+		err := c.Validate()
+
+		assert.NoError(t, err)
+		assert.Equal(t, FetcherHTTP, c.Plugins.Fetcher)
+		assert.True(t, c.Plugins.FetcherConfig.Headless)
+		assert.Equal(t, 5*time.Second, c.Plugins.FetcherConfig.WaitTimeout)
+	})
+
 	t.Run("異常系: output.file_pattern に未知のプレースホルダがあるとエラー", func(t *testing.T) {
 		c := Default()
 		c.Targets = []string{"https://example.com/"}

@@ -8,6 +8,8 @@ import (
 	"scraperbot/internal/presentation/cli"
 
 	// プラグインのinit処理の実行
+	_ "scraperbot/plugins/fetcher-chromium"
+	_ "scraperbot/plugins/fetcher-http"
 	_ "scraperbot/plugins/filter-maincontent"
 	_ "scraperbot/plugins/filter-selector"
 	_ "scraperbot/plugins/linkextractor-default"

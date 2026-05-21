@@ -76,3 +76,25 @@ func (o PDFOutput) Valid() bool {
 	}
 	return false
 }
+
+// FetcherKind は URL フェッチ実装の種別を表す。
+//
+// "http": net/http による静的取得。
+// "chromium": chromedp によるヘッドレス Chromium 取得。
+type FetcherKind string
+
+const (
+	// FetcherHTTP は標準 HTTP クライアント取得。
+	FetcherHTTP FetcherKind = "http"
+	// FetcherChromium は chromedp によるブラウザ取得。
+	FetcherChromium FetcherKind = "chromium"
+)
+
+// Valid は定義済みの FetcherKind かどうかを返す。
+func (f FetcherKind) Valid() bool {
+	switch f {
+	case FetcherHTTP, FetcherChromium:
+		return true
+	}
+	return false
+}

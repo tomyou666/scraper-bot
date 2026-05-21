@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"scraperbot/internal/domain/model"
 	"scraperbot/internal/domain/plugin"
 )
 
@@ -23,7 +24,12 @@ type Registry struct {
 	filters map[string]func() plugin.Filter
 	// linkextractors は LinkExtractor 名→ファクトリ。
 	linkextractors map[string]func() plugin.LinkExtractor
+	// fetchers は Fetcher 名→ファクトリ。
+	fetchers map[string]FetcherFactory
 }
+
+// FetcherFactory は設定から Fetcher インスタンスを生成するファクトリ関数。
+type FetcherFactory func(cfg *model.Config) (Fetcher, error)
 
 // newRegistry は空のプラグインマップを持つレジストリを生成する。
 func newRegistry() *Registry {
@@ -33,6 +39,7 @@ func newRegistry() *Registry {
 		transformers:   map[string]func() plugin.Transformer{},
 		filters:        map[string]func() plugin.Filter{},
 		linkextractors: map[string]func() plugin.LinkExtractor{},
+		fetchers:       map[string]FetcherFactory{},
 	}
 }
 
@@ -69,6 +76,11 @@ func RegisterLinkExtractor(name string, f func() plugin.LinkExtractor) {
 	defaultRegistry.registerLinkExtractor(name, f)
 }
 
+// RegisterFetcher は URL 取得 Fetcher プラグインを登録する。
+func RegisterFetcher(name string, f FetcherFactory) {
+	defaultRegistry.registerFetcher(name, f)
+}
+
 // RegisterPreProcessorTo は任意のレジストリへ登録するための公開ヘルパ。
 // テストや独立レジストリでの登録を可能にする。
 func RegisterPreProcessorTo(r *Registry, name string, f func() plugin.PreProcessor) {
@@ -93,6 +105,11 @@ func RegisterFilterTo(r *Registry, name string, f func() plugin.Filter) {
 // RegisterLinkExtractorTo は任意のレジストリへ LinkExtractor を登録する。
 func RegisterLinkExtractorTo(r *Registry, name string, f func() plugin.LinkExtractor) {
 	r.registerLinkExtractor(name, f)
+}
+
+// RegisterFetcherTo は任意のレジストリへ Fetcher を登録する。
+func RegisterFetcherTo(r *Registry, name string, f FetcherFactory) {
+	r.registerFetcher(name, f)
 }
 
 // registerPreProcessor は PreProcessor ファクトリを登録する（重複時 panic）。
@@ -143,6 +160,16 @@ func (r *Registry) registerLinkExtractor(name string, f func() plugin.LinkExtrac
 		panic(fmt.Sprintf("link_extractor already registered: %s", name))
 	}
 	r.linkextractors[name] = f
+}
+
+// registerFetcher は Fetcher ファクトリを登録する（重複時 panic）。
+func (r *Registry) registerFetcher(name string, f FetcherFactory) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, dup := r.fetchers[name]; dup {
+		panic(fmt.Sprintf("fetcher already registered: %s", name))
+	}
+	r.fetchers[name] = f
 }
 
 // 以下は登録名から新しいインスタンスを生成するファクトリ呼び出し群。
@@ -202,6 +229,17 @@ func (r *Registry) NewLinkExtractor(name string) (plugin.LinkExtractor, error) {
 	return f(), nil
 }
 
+// NewFetcher は登録名と設定から Fetcher インスタンスを生成する。
+func (r *Registry) NewFetcher(name string, cfg *model.Config) (Fetcher, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	f, ok := r.fetchers[name]
+	if !ok {
+		return nil, fmt.Errorf("fetcher not found: %s", name)
+	}
+	return f(cfg)
+}
+
 // Has は指定された Kind と name が登録されているかを返す。
 func (r *Registry) Has(kind plugin.Kind, name string) bool {
 	r.mu.RLock()
@@ -221,6 +259,9 @@ func (r *Registry) Has(kind plugin.Kind, name string) bool {
 		return ok
 	case plugin.KindLinkExtractor:
 		_, ok := r.linkextractors[name]
+		return ok
+	case plugin.KindFetcher:
+		_, ok := r.fetchers[name]
 		return ok
 	}
 	return false
@@ -242,6 +283,8 @@ func (r *Registry) Names(kind plugin.Kind) []string {
 		src = keysOf(r.filters)
 	case plugin.KindLinkExtractor:
 		src = keysOf(r.linkextractors)
+	case plugin.KindFetcher:
+		src = keysOf(r.fetchers)
 	default:
 		return nil
 	}

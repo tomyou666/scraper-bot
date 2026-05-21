@@ -82,6 +82,15 @@ type Flags struct {
 	// LinkExtractor は --link-extractor。
 	LinkExtractor string
 
+	// Fetcher は --fetcher（http / chromium）。
+	Fetcher string
+	// FetcherBrowserPath は --fetcher-browser-path。
+	FetcherBrowserPath string
+	// FetcherUserAgent は --fetcher-user-agent。
+	FetcherUserAgent string
+	// FetcherHeadless は --fetcher-headless の 3 値フラグ。
+	FetcherHeadless boolFlag
+
 	// OutputDir は --output-dir。
 	OutputDir string
 	// OutputPattern は --output-pattern。
@@ -213,6 +222,11 @@ func ParseArgs(args []string) (*Flags, error) {
 	fs.Var(&f.Filters, "filter", "Filter プラグイン名 (繰り返し可)")
 	fs.StringVar(&f.LinkExtractor, "link-extractor", "", "LinkExtractor プラグイン名")
 
+	fs.StringVar(&f.Fetcher, "fetcher", "", "URLフェッチ実装 (http / chromium)")
+	fs.StringVar(&f.FetcherBrowserPath, "fetcher-browser-path", "", "chromium フェッチ用ブラウザ実行ファイルパス")
+	fs.StringVar(&f.FetcherUserAgent, "fetcher-user-agent", "", "chromium フェッチ用 User-Agent")
+	fs.Var(&f.FetcherHeadless, "fetcher-headless", "chromium フェッチのヘッドレス実行")
+
 	fs.StringVar(&f.OutputDir, "output-dir", "", "出力ディレクトリ")
 	fs.StringVar(&f.OutputPattern, "output-pattern", "", "出力ファイル名パターン")
 
@@ -336,6 +350,19 @@ func Merge(cfg *model.Config, f *Flags) {
 	}
 	if f.LinkExtractor != "" {
 		cfg.Plugins.LinkExtractor = f.LinkExtractor
+	}
+
+	if f.Fetcher != "" {
+		cfg.Plugins.Fetcher = model.FetcherKind(f.Fetcher)
+	}
+	if f.FetcherBrowserPath != "" {
+		cfg.Plugins.FetcherConfig.BrowserPath = f.FetcherBrowserPath
+	}
+	if f.FetcherUserAgent != "" {
+		cfg.Plugins.FetcherConfig.UserAgent = f.FetcherUserAgent
+	}
+	if f.FetcherHeadless.set {
+		cfg.Plugins.FetcherConfig.Headless = f.FetcherHeadless.v
 	}
 
 	if f.OutputDir != "" {

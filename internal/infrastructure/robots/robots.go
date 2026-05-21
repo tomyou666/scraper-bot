@@ -8,6 +8,7 @@ import (
 
 	"github.com/temoto/robotstxt"
 
+	"scraperbot/internal/core"
 	"scraperbot/internal/domain/plugin"
 )
 
@@ -17,18 +18,18 @@ type Cache struct {
 	mu sync.Mutex
 	// hosts は scheme+host キー→パース済み robots データ。
 	hosts map[string]*robotstxt.RobotsData
-	// http は robots.txt 取得用クライアント。
-	http plugin.HTTPClient
+	// fetcher は robots.txt 取得用 Fetcher。
+	fetcher core.Fetcher
 	// logger は取得・パース失敗時の警告出力先。
 	logger plugin.Logger
 }
 
-// NewCache は HTTP クライアントとロガーから robots キャッシュを構築する。
-func NewCache(httpC plugin.HTTPClient, logger plugin.Logger) *Cache {
+// NewCache は Fetcher とロガーから robots キャッシュを構築する。
+func NewCache(fetcher core.Fetcher, logger plugin.Logger) *Cache {
 	return &Cache{
-		hosts:  map[string]*robotstxt.RobotsData{},
-		http:   httpC,
-		logger: logger,
+		hosts:   map[string]*robotstxt.RobotsData{},
+		fetcher: fetcher,
+		logger:  logger,
 	}
 }
 
@@ -59,10 +60,7 @@ func (c *Cache) get(ctx context.Context, u *url.URL) *robotstxt.RobotsData {
 		c.hosts[host] = nil
 		return nil
 	}
-	res, err := c.http.Do(ctx, &plugin.HTTPRequest{
-		Method: "GET",
-		URL:    robotsURL,
-	})
+	res, err := c.fetcher.Get(ctx, robotsURL, nil)
 	if err != nil {
 		if c.logger != nil {
 			c.logger.Warn("robots.txt fetch failed (treat as allow)", "host", host, "err", err.Error())

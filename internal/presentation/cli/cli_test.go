@@ -14,6 +14,8 @@ import (
 	"scraperbot/internal/presentation/cli"
 
 	// プラグイン副作用 import: CLI テストでもプラグインを利用するため
+	_ "scraperbot/plugins/fetcher-chromium"
+	_ "scraperbot/plugins/fetcher-http"
 	_ "scraperbot/plugins/filter-maincontent"
 	_ "scraperbot/plugins/filter-selector"
 	_ "scraperbot/plugins/linkextractor-default"

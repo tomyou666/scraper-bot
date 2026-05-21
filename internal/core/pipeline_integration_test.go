@@ -10,10 +10,11 @@ import (
 
 	"scraperbot/internal/core"
 	"scraperbot/internal/domain/model"
-	"scraperbot/internal/infrastructure/httpclient"
 	"scraperbot/internal/infrastructure/logging"
 
 	// プラグイン副作用 import: 実装プラグインをレジストリへ登録する
+	_ "scraperbot/plugins/fetcher-chromium"
+	_ "scraperbot/plugins/fetcher-http"
 	_ "scraperbot/plugins/filter-maincontent"
 	_ "scraperbot/plugins/filter-selector"
 	_ "scraperbot/plugins/linkextractor-default"
@@ -23,12 +24,19 @@ import (
 	_ "scraperbot/plugins/transformer-markdown"
 )
 
-// setupKernel はテスト用にカーネルと HTTP クライアントを組み立てる共通関数。
-func setupKernel(t *testing.T, cfg *model.Config) (*core.Kernel, *httpclient.Client) {
+// setupKernel はテスト用にカーネルとページ用 Fetcher を組み立てる共通関数。
+func setupKernel(t *testing.T, cfg *model.Config) (*core.Kernel, core.Fetcher) {
 	t.Helper()
 	logger := logging.NewDefault()
-	client := httpclient.New(cfg.Request)
-	host := core.NewHost(logger, cfg, client)
+	pageFetcher, err := core.NewFetcherFromConfig(cfg)
+	if err != nil {
+		t.Fatalf("fetcher: %v", err)
+	}
+	hostHTTP, err := core.ResolveHostHTTP(cfg, pageFetcher)
+	if err != nil {
+		t.Fatalf("host http: %v", err)
+	}
+	host := core.NewHost(logger, cfg, hostHTTP)
 	k := core.NewKernel(cfg, host, core.Default())
 	if err := k.Init(context.Background()); err != nil {
 		t.Fatalf("kernel init: %v", err)
@@ -36,7 +44,7 @@ func setupKernel(t *testing.T, cfg *model.Config) (*core.Kernel, *httpclient.Cli
 	t.Cleanup(func() {
 		_ = k.Close(context.Background())
 	})
-	return k, client
+	return k, pageFetcher
 }
 
 func baseConfig() *model.Config {
