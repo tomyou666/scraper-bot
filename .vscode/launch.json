@@ -12,7 +12,7 @@
             "program": "${file}"
         },
         {
-            "name": "Launch main file with arguments",
+            "name": "Launch main file with my config",
             "type": "go",
             "request": "launch",
             "mode": "debug",
