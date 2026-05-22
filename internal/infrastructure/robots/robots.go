@@ -8,7 +8,6 @@ import (
 
 	"github.com/temoto/robotstxt"
 
-	"scraperbot/internal/core"
 	"scraperbot/internal/domain/plugin"
 )
 
@@ -19,13 +18,13 @@ type Cache struct {
 	// hosts は scheme+host キー→パース済み robots データ。
 	hosts map[string]*robotstxt.RobotsData
 	// fetcher は robots.txt 取得用 Fetcher。
-	fetcher core.Fetcher
+	fetcher plugin.Fetcher
 	// logger は取得・パース失敗時の警告出力先。
 	logger plugin.Logger
 }
 
 // NewCache は Fetcher とロガーから robots キャッシュを構築する。
-func NewCache(fetcher core.Fetcher, logger plugin.Logger) *Cache {
+func NewCache(fetcher plugin.Fetcher, logger plugin.Logger) *Cache {
 	return &Cache{
 		hosts:   map[string]*robotstxt.RobotsData{},
 		fetcher: fetcher,

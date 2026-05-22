@@ -26,8 +26,6 @@ type Crawler struct {
 	cfg *model.Config
 	// kernel はプラグインカーネル。
 	kernel *Kernel
-	// fetcher は HTTP 取得実装。
-	fetcher Fetcher
 	// pipeline は 1 URL あたりの処理パイプライン。
 	pipeline *Pipeline
 	// robots は robots.txt 判定（nil 可）。
@@ -55,13 +53,12 @@ type CrawlStats struct {
 }
 
 // NewCrawler はクローラを構築する。robots は nil 可（その場合は判定をスキップ）。
-func NewCrawler(k *Kernel, fetcher Fetcher, robots RobotsChecker, sink ResultSink) *Crawler {
+func NewCrawler(k *Kernel, robots RobotsChecker, sink ResultSink) *Crawler {
 	cfg := k.Config()
 	c := &Crawler{
 		cfg:      cfg,
 		kernel:   k,
-		fetcher:  fetcher,
-		pipeline: NewPipeline(k, fetcher),
+		pipeline: NewPipeline(k),
 		robots:   robots,
 		sink:     sink,
 	}

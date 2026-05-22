@@ -24,19 +24,11 @@ import (
 	_ "scraperbot/plugins/transformer-markdown"
 )
 
-// setupKernel はテスト用にカーネルとページ用 Fetcher を組み立てる共通関数。
-func setupKernel(t *testing.T, cfg *model.Config) (*core.Kernel, core.Fetcher) {
+// setupKernel はテスト用に初期化済みカーネルを組み立てる共通関数。
+func setupKernel(t *testing.T, cfg *model.Config) *core.Kernel {
 	t.Helper()
 	logger := logging.NewDefault()
-	pageFetcher, err := core.NewFetcherFromConfig(cfg)
-	if err != nil {
-		t.Fatalf("fetcher: %v", err)
-	}
-	hostHTTP, err := core.ResolveHostHTTP(cfg, pageFetcher)
-	if err != nil {
-		t.Fatalf("host http: %v", err)
-	}
-	host := core.NewHost(logger, cfg, hostHTTP)
+	host := core.NewHost(logger, cfg)
 	k := core.NewKernel(cfg, host, core.Default())
 	if err := k.Init(context.Background()); err != nil {
 		t.Fatalf("kernel init: %v", err)
@@ -44,7 +36,7 @@ func setupKernel(t *testing.T, cfg *model.Config) (*core.Kernel, core.Fetcher) {
 	t.Cleanup(func() {
 		_ = k.Close(context.Background())
 	})
-	return k, pageFetcher
+	return k
 }
 
 func baseConfig() *model.Config {
@@ -59,8 +51,8 @@ func TestPipeline_SingleURL(t *testing.T) {
 
 	t.Run("正常系: HTMLページからMarkdownが生成されメタデータも抽出される", func(t *testing.T) {
 		cfg := baseConfig()
-		k, client := setupKernel(t, cfg)
-		p := core.NewPipeline(k, client)
+		k := setupKernel(t, cfg)
+		p := core.NewPipeline(k)
 
 		u, _ := url.Parse(srv.URL + "/")
 		req := model.NewRequest(u, 0)
@@ -79,8 +71,8 @@ func TestPipeline_SingleURL(t *testing.T) {
 
 	t.Run("正常系: P8 LinkExtractor は同一サイトの相対リンクと外部リンクを抽出する", func(t *testing.T) {
 		cfg := baseConfig()
-		k, client := setupKernel(t, cfg)
-		p := core.NewPipeline(k, client)
+		k := setupKernel(t, cfg)
+		p := core.NewPipeline(k)
 
 		u, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		req := model.NewRequest(u, 0)
@@ -103,8 +95,8 @@ func TestPipeline_SingleURL(t *testing.T) {
 
 	t.Run("正常系: PDF リンク (.pdf) を直接たどると PDF パーサーへ振り分けられる", func(t *testing.T) {
 		cfg := baseConfig()
-		k, client := setupKernel(t, cfg)
-		p := core.NewPipeline(k, client)
+		k := setupKernel(t, cfg)
+		p := core.NewPipeline(k)
 
 		u, _ := url.Parse(srv.URL + "/files/report.pdf")
 		req := model.NewRequest(u, 0)
@@ -120,8 +112,8 @@ func TestPipeline_SingleURL(t *testing.T) {
 	t.Run("異常系: pdf.enabled=false の場合 PDF リンクを開くと当該URLはエラー", func(t *testing.T) {
 		cfg := baseConfig()
 		cfg.PDF.Enabled = false
-		k, client := setupKernel(t, cfg)
-		p := core.NewPipeline(k, client)
+		k := setupKernel(t, cfg)
+		p := core.NewPipeline(k)
 
 		u, _ := url.Parse(srv.URL + "/files/report.pdf")
 		req := model.NewRequest(u, 0)
@@ -138,8 +130,8 @@ func TestPipeline_SingleURL(t *testing.T) {
 		cfg.Request.Headers = map[string]string{"User-Agent": "scraperbot-test/1.0"}
 		cfg.Plugins.PreProcessors = []string{"header"}
 
-		k, client := setupKernel(t, cfg)
-		p := core.NewPipeline(k, client)
+		k := setupKernel(t, cfg)
+		p := core.NewPipeline(k)
 
 		u, _ := url.Parse(srv.URL + "/")
 		req := model.NewRequest(u, 0)
@@ -156,8 +148,8 @@ func TestPipeline_SingleURL(t *testing.T) {
 		cfg.Content.Selector = "article.target"
 		cfg.Plugins.Filters = []string{"selector"}
 
-		k, client := setupKernel(t, cfg)
-		p := core.NewPipeline(k, client)
+		k := setupKernel(t, cfg)
+		p := core.NewPipeline(k)
 
 		u, _ := url.Parse(srv.URL + "/selector_target.html")
 		req := model.NewRequest(u, 0)

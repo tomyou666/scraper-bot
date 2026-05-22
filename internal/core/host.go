@@ -14,20 +14,31 @@ type hostImpl struct {
 	logger plugin.Logger
 	// cfg はフラットキー参照用の設定スナップショット。
 	cfg *model.Config
-	// http はプラグイン向け HTTP クライアント。
-	http plugin.HTTPClient
 }
 
 // NewHost はプラグインに渡す Host 実装を構築する。
-func NewHost(logger plugin.Logger, cfg *model.Config, http plugin.HTTPClient) plugin.Host {
-	return &hostImpl{logger: logger, cfg: cfg, http: http}
+func NewHost(logger plugin.Logger, cfg *model.Config) plugin.Host {
+	return &hostImpl{logger: logger, cfg: cfg}
 }
 
 // Logger は plugin.Host.Logger の実装。
 func (h *hostImpl) Logger() plugin.Logger { return h.logger }
 
-// HTTP は plugin.Host.HTTP の実装。
-func (h *hostImpl) HTTP() plugin.HTTPClient { return h.http }
+// RequestConfig は plugin.Host.RequestConfig の実装。
+func (h *hostImpl) RequestConfig() model.RequestConfig {
+	if h.cfg == nil {
+		return model.RequestConfig{}
+	}
+	return h.cfg.Request
+}
+
+// FetcherConfig は plugin.Host.FetcherConfig の実装。
+func (h *hostImpl) FetcherConfig() model.FetcherConfig {
+	if h.cfg == nil {
+		return model.FetcherConfig{}
+	}
+	return h.cfg.Plugins.FetcherConfig
+}
 
 // Config はフラットキーで設定値を文字列として取得する軽量 API。
 // 例: "request.headers.User-Agent" / "content.selector" / "pdf.mode"

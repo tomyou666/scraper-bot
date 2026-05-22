@@ -111,6 +111,26 @@ func (f *fltFake) Filter(_ context.Context, c *model.Content) (*model.Content, e
 	return c, nil
 }
 
+type fetcherFake struct {
+	name string
+	rec  *recorder
+}
+
+func (f *fetcherFake) Metadata() plugin.Metadata {
+	return plugin.Metadata{Name: f.name, Kind: plugin.KindFetcher}
+}
+func (f *fetcherFake) Init(context.Context, plugin.Host) error {
+	*f.rec.calls = append(*f.rec.calls, call{f.name, "init"})
+	return nil
+}
+func (f *fetcherFake) Close(context.Context) error {
+	*f.rec.calls = append(*f.rec.calls, call{f.name, "close"})
+	return nil
+}
+func (f *fetcherFake) Get(context.Context, *url.URL, map[string]string) (*model.Response, error) {
+	return &model.Response{}, nil
+}
+
 type leFake struct {
 	name string
 	rec  *recorder
@@ -148,13 +168,13 @@ func TestKernel_Lifecycle(t *testing.T) {
 
 		names := orderOf(rec, "init")
 		assert.Equal(t,
-			[]string{"pp1", "ps1", "tr1", "ft1", "le1"},
+			[]string{"pp1", "http", "ps1", "tr1", "ft1", "le1"},
 			names,
-			"設計通りの初期化順 (P2→P5→P6→P7→P8)")
+			"設計通りの初期化順 (P2→P3→P5→P6→P7→P8)")
 
 		closeNames := orderOf(rec, "close")
 		assert.Equal(t,
-			[]string{"le1", "ft1", "tr1", "ps1", "pp1"},
+			[]string{"le1", "ft1", "tr1", "ps1", "http", "pp1"},
 			closeNames,
 			"初期化と逆順でCloseされる")
 	})
@@ -177,7 +197,7 @@ func TestKernel_Lifecycle(t *testing.T) {
 		// ロールバックで Close されたものは ft1 より前の (tr1, ps1, pp1)
 		closeNames := orderOf(rec, "close")
 		assert.Equal(t,
-			[]string{"tr1", "ps1", "pp1"},
+			[]string{"tr1", "ps1", "http", "pp1"},
 			closeNames,
 			"Init成功済みのプラグインだけが逆順でCloseされる")
 	})
@@ -206,6 +226,7 @@ func registerAll(reg *core.Registry, rec *recorder, failFilterInit bool, _ strin
 	le1 := &leFake{name: "le1", rec: rec}
 
 	regPreProcessor(reg, "pp1", pp1)
+	core.RegisterFetcherTo(reg, "http", func() plugin.Fetcher { return &fetcherFake{name: "http", rec: rec} })
 	regParser(reg, "ps1", ps1)
 	regTransformer(reg, "tr1", tr1)
 	if failFilterInit {
@@ -265,6 +286,7 @@ func newCfgForKernel() *model.Config {
 	c := model.Default()
 	c.Targets = []string{"https://example.com/"}
 	c.Plugins = model.PluginSelection{
+		Fetcher:       model.FetcherHTTP,
 		PreProcessors: []string{"pp1"},
 		Parsers:       []string{"ps1"},
 		Transformer:   "tr1",

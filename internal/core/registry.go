@@ -5,7 +5,6 @@ import (
 	"sort"
 	"sync"
 
-	"scraperbot/internal/domain/model"
 	"scraperbot/internal/domain/plugin"
 )
 
@@ -25,11 +24,8 @@ type Registry struct {
 	// linkextractors は LinkExtractor 名→ファクトリ。
 	linkextractors map[string]func() plugin.LinkExtractor
 	// fetchers は Fetcher 名→ファクトリ。
-	fetchers map[string]FetcherFactory
+	fetchers map[string]func() plugin.Fetcher
 }
-
-// FetcherFactory は設定から Fetcher インスタンスを生成するファクトリ関数。
-type FetcherFactory func(cfg *model.Config) (Fetcher, error)
 
 // newRegistry は空のプラグインマップを持つレジストリを生成する。
 func newRegistry() *Registry {
@@ -39,7 +35,7 @@ func newRegistry() *Registry {
 		transformers:   map[string]func() plugin.Transformer{},
 		filters:        map[string]func() plugin.Filter{},
 		linkextractors: map[string]func() plugin.LinkExtractor{},
-		fetchers:       map[string]FetcherFactory{},
+		fetchers:       map[string]func() plugin.Fetcher{},
 	}
 }
 
@@ -77,7 +73,7 @@ func RegisterLinkExtractor(name string, f func() plugin.LinkExtractor) {
 }
 
 // RegisterFetcher は URL 取得 Fetcher プラグインを登録する。
-func RegisterFetcher(name string, f FetcherFactory) {
+func RegisterFetcher(name string, f func() plugin.Fetcher) {
 	defaultRegistry.registerFetcher(name, f)
 }
 
@@ -108,7 +104,7 @@ func RegisterLinkExtractorTo(r *Registry, name string, f func() plugin.LinkExtra
 }
 
 // RegisterFetcherTo は任意のレジストリへ Fetcher を登録する。
-func RegisterFetcherTo(r *Registry, name string, f FetcherFactory) {
+func RegisterFetcherTo(r *Registry, name string, f func() plugin.Fetcher) {
 	r.registerFetcher(name, f)
 }
 
@@ -163,7 +159,7 @@ func (r *Registry) registerLinkExtractor(name string, f func() plugin.LinkExtrac
 }
 
 // registerFetcher は Fetcher ファクトリを登録する（重複時 panic）。
-func (r *Registry) registerFetcher(name string, f FetcherFactory) {
+func (r *Registry) registerFetcher(name string, f func() plugin.Fetcher) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, dup := r.fetchers[name]; dup {
@@ -229,15 +225,15 @@ func (r *Registry) NewLinkExtractor(name string) (plugin.LinkExtractor, error) {
 	return f(), nil
 }
 
-// NewFetcher は登録名と設定から Fetcher インスタンスを生成する。
-func (r *Registry) NewFetcher(name string, cfg *model.Config) (Fetcher, error) {
+// NewFetcher は登録名から Fetcher インスタンスを生成する。
+func (r *Registry) NewFetcher(name string) (plugin.Fetcher, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	f, ok := r.fetchers[name]
 	if !ok {
 		return nil, fmt.Errorf("fetcher not found: %s", name)
 	}
-	return f(cfg)
+	return f(), nil
 }
 
 // Has は指定された Kind と name が登録されているかを返す。

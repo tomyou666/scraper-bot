@@ -28,6 +28,8 @@ type Kernel struct {
 	filters []plugin.Filter
 	// linkExtractor は Init 済み LinkExtractor。
 	linkExtractor plugin.LinkExtractor
+	// fetcher は Init 済み P3 Fetcher。
+	fetcher plugin.Fetcher
 
 	// initialized は Init 成功順のプラグイン（Close 用）。
 	initialized []plugin.Plugin
@@ -69,6 +71,20 @@ func (k *Kernel) Init(ctx context.Context) error {
 		k.preprocessors = append(k.preprocessors, p)
 		k.initialized = append(k.initialized, p)
 	}
+
+	fetcherName := string(k.cfg.Plugins.Fetcher)
+	if fetcherName == "" {
+		fetcherName = string(model.FetcherHTTP)
+	}
+	f, err := k.reg.NewFetcher(fetcherName)
+	if err != nil {
+		return rollback(err)
+	}
+	if err := f.Init(ctx, k.host); err != nil {
+		return rollback(fmt.Errorf("init fetcher %s: %w", fetcherName, err))
+	}
+	k.fetcher = f
+	k.initialized = append(k.initialized, f)
 
 	for _, name := range k.cfg.Plugins.Parsers {
 		p, err := k.reg.NewParser(name)
@@ -149,3 +165,6 @@ func (k *Kernel) Filters() []plugin.Filter { return k.filters }
 
 // LinkExtractor は Init 済みの LinkExtractor を返す。
 func (k *Kernel) LinkExtractor() plugin.LinkExtractor { return k.linkExtractor }
+
+// Fetcher は Init 済みの P3 Fetcher を返す。
+func (k *Kernel) Fetcher() plugin.Fetcher { return k.fetcher }

@@ -47,8 +47,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		stats, err := c.Run(context.Background(), []*url.URL{seed})
@@ -79,8 +79,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		_, err := c.Run(context.Background(), []*url.URL{seed})
@@ -106,8 +106,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		_, err := c.Run(context.Background(), []*url.URL{seed})
@@ -133,8 +133,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		_, err := c.Run(context.Background(), []*url.URL{seed})
@@ -163,8 +163,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		_, err := c.Run(context.Background(), []*url.URL{seed})
@@ -195,8 +195,8 @@ func TestCrawler(t *testing.T) {
 
 		robots := &denyRobots{denyPaths: []string{"/docs/page-a.html"}}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, robots, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, robots, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		_, err := c.Run(context.Background(), []*url.URL{seed})
@@ -224,8 +224,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		seed, _ := url.Parse(srv.URL + "/links_with_pdf.html")
 		_, err := c.Run(context.Background(), []*url.URL{seed})
@@ -257,8 +257,8 @@ func TestCrawler(t *testing.T) {
 			collected = append(collected, r.URL.String())
 		}
 
-		k, client := setupKernel(t, cfg)
-		c := core.NewCrawler(k, client, nil, sink)
+		k := setupKernel(t, cfg)
+		c := core.NewCrawler(k, nil, sink)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()

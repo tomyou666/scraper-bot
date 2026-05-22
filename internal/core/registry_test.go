@@ -45,8 +45,13 @@ func (f *fakeTransformer) Transform(context.Context, *model.Content) (*model.Res
 	return &model.Result{}, nil
 }
 
-type fakeFetcher struct{}
+type fakeFetcher struct{ name string }
 
+func (f *fakeFetcher) Metadata() plugin.Metadata {
+	return plugin.Metadata{Name: f.name, Kind: plugin.KindFetcher}
+}
+func (f *fakeFetcher) Init(context.Context, plugin.Host) error { return nil }
+func (f *fakeFetcher) Close(context.Context) error             { return nil }
 func (f *fakeFetcher) Get(context.Context, *url.URL, map[string]string) (*model.Response, error) {
 	return &model.Response{}, nil
 }
@@ -144,13 +149,9 @@ func TestRegistry(t *testing.T) {
 
 	t.Run("正常系: Fetcher を登録・取得できる", func(t *testing.T) {
 		reg := NewRegistry()
-		cfg := model.Default()
-		reg.registerFetcher("http", func(c *model.Config) (Fetcher, error) {
-			_ = c
-			return &fakeFetcher{}, nil
-		})
+		reg.registerFetcher("http", func() plugin.Fetcher { return &fakeFetcher{name: "http"} })
 
-		f, err := reg.NewFetcher("http", &cfg)
+		f, err := reg.NewFetcher("http")
 		assert.NoError(t, err)
 		assert.NotNil(t, f)
 		assert.True(t, reg.Has(plugin.KindFetcher, "http"))
@@ -158,8 +159,7 @@ func TestRegistry(t *testing.T) {
 
 	t.Run("異常系: 未登録 Fetcher はエラー", func(t *testing.T) {
 		reg := NewRegistry()
-		cfg := model.Default()
-		_, err := reg.NewFetcher("missing", &cfg)
+		_, err := reg.NewFetcher("missing")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "fetcher not found")
 	})

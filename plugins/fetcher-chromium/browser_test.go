@@ -1,4 +1,4 @@
-package chromefetcher
+package chromiumfetch
 
 import (
 	"os"
@@ -16,7 +16,7 @@ func TestResolveBrowserPath_explicit(t *testing.T) {
 	bin := filepath.Join(tmp, "fake-chromium")
 	require.NoError(t, os.WriteFile(bin, []byte{0}, 0o755))
 
-	path, err := ResolveBrowserPath(bin)
+	path, err := resolveBrowserPath(bin)
 	require.NoError(t, err)
 	assert.Equal(t, bin, path)
 }
@@ -27,14 +27,14 @@ func TestResolveBrowserPath_env(t *testing.T) {
 	require.NoError(t, os.WriteFile(bin, []byte{0}, 0o755))
 
 	t.Setenv(EnvBrowserPath, bin)
-	path, err := ResolveBrowserPath("")
+	path, err := resolveBrowserPath("")
 	require.NoError(t, err)
 	assert.Equal(t, bin, path)
 }
 
 func TestResolveBrowserPath_notFound(t *testing.T) {
 	t.Setenv(EnvBrowserPath, "")
-	_, err := ResolveBrowserPath("/nonexistent/browser/binary")
+	_, err := resolveBrowserPath("/nonexistent/browser/binary")
 	require.Error(t, err)
 }
 
@@ -46,7 +46,7 @@ func TestResolveBrowserPath_prefersExplicitOverEnv(t *testing.T) {
 	require.NoError(t, os.WriteFile(envBin, []byte{0}, 0o755))
 	t.Setenv(EnvBrowserPath, envBin)
 
-	path, err := ResolveBrowserPath(explicit)
+	path, err := resolveBrowserPath(explicit)
 	require.NoError(t, err)
 	assert.Equal(t, explicit, path)
 }
@@ -58,7 +58,7 @@ func TestResolveBrowserPath_systemChromium(t *testing.T) {
 	if _, err := os.Stat("/usr/bin/chromium"); err != nil {
 		t.Skip("chromium not installed")
 	}
-	path, err := ResolveBrowserPath("")
+	path, err := resolveBrowserPath("")
 	require.NoError(t, err)
 	assert.NotEmpty(t, path)
 }

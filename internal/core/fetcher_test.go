@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,53 +9,49 @@ import (
 
 	"scraperbot/internal/core"
 	"scraperbot/internal/domain/model"
-	"scraperbot/internal/infrastructure/httpclient"
+	"scraperbot/internal/infrastructure/logging"
 
 	_ "scraperbot/plugins/fetcher-chromium"
 	_ "scraperbot/plugins/fetcher-http"
 )
 
-func TestNewFetcherFromConfig_httpDefault(t *testing.T) {
+func TestKernel_Init_httpFetcher(t *testing.T) {
 	t.Parallel()
 	cfg := model.Default()
 	cfg.Targets = []string{"https://example.com/"}
 
-	f, err := core.NewFetcherFromConfig(&cfg)
+	host := core.NewHost(logging.NewDefault(), &cfg)
+	k := core.NewKernel(&cfg, host, core.Default())
+	err := k.Init(context.Background())
 	require.NoError(t, err)
-	_, ok := f.(*httpclient.Client)
-	assert.True(t, ok, "デフォルト fetcher は httpclient")
+	defer k.Close(context.Background())
+
+	assert.NotNil(t, k.Fetcher())
+	assert.Equal(t, string(model.FetcherHTTP), k.Fetcher().Metadata().Name)
 }
 
-func TestNewFetcherFromConfig_chromiumMissingBrowser(t *testing.T) {
+func TestKernel_Init_chromiumMissingBrowser(t *testing.T) {
 	t.Parallel()
 	cfg := model.Default()
 	cfg.Targets = []string{"https://example.com/"}
 	cfg.Plugins.Fetcher = model.FetcherChromium
 	cfg.Plugins.FetcherConfig.BrowserPath = "/nonexistent/chromium-binary"
 
-	_, err := core.NewFetcherFromConfig(&cfg)
+	host := core.NewHost(logging.NewDefault(), &cfg)
+	k := core.NewKernel(&cfg, host, core.Default())
+	err := k.Init(context.Background())
 	require.Error(t, err)
 }
 
-func TestNewFetcherFromConfig_unknownFetcher(t *testing.T) {
+func TestKernel_Init_unknownFetcher(t *testing.T) {
 	t.Parallel()
 	cfg := model.Default()
 	cfg.Targets = []string{"https://example.com/"}
 	cfg.Plugins.Fetcher = "selenium"
 
-	_, err := core.NewFetcherFromConfig(&cfg)
+	host := core.NewHost(logging.NewDefault(), &cfg)
+	k := core.NewKernel(&cfg, host, core.Default())
+	err := k.Init(context.Background())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "fetcher not found")
-}
-
-func TestResolveHostHTTP_httpUsesSameFetcher(t *testing.T) {
-	t.Parallel()
-	cfg := model.Default()
-	cfg.Targets = []string{"https://example.com/"}
-
-	pageFetcher, err := core.NewFetcherFromConfig(&cfg)
-	require.NoError(t, err)
-	hc, err := core.ResolveHostHTTP(&cfg, pageFetcher)
-	require.NoError(t, err)
-	assert.Same(t, pageFetcher, hc)
 }

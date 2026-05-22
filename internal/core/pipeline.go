@@ -11,23 +11,15 @@ import (
 	"scraperbot/internal/domain/plugin"
 )
 
-// Fetcher は HTTP 取得のみを抽象化したインタフェース。
-// テスト時に差し替えられるよう、Pipeline は具体実装ではなくこれに依存する。
-type Fetcher interface {
-	Get(ctx context.Context, u *url.URL, headers map[string]string) (*model.Response, error)
-}
-
 // Pipeline は 1 URL 分のスクレイピング処理を実行する。
 type Pipeline struct {
 	// kernel はプラグインと設定へのアクセス。
 	kernel *Kernel
-	// fetcher は HTTP 取得実装。
-	fetcher Fetcher
 }
 
-// NewPipeline はカーネルとフェッチャを受け取りパイプラインを構築する。
-func NewPipeline(k *Kernel, f Fetcher) *Pipeline {
-	return &Pipeline{kernel: k, fetcher: f}
+// NewPipeline はカーネルを受け取りパイプラインを構築する。
+func NewPipeline(k *Kernel) *Pipeline {
+	return &Pipeline{kernel: k}
 }
 
 // PipelineOutput はパイプライン出力。リンクは P8 抽出結果。
@@ -48,8 +40,8 @@ func (p *Pipeline) Run(ctx context.Context, req *model.Request) (*PipelineOutput
 		}
 	}
 
-	// HTTP 取得（リトライ・タイムアウトはフェッチャ実装）。
-	res, err := p.fetcher.Get(ctx, req.URL, req.Headers)
+	// P3: Fetcher による URL 取得（リトライ・タイムアウトはプラグイン実装）。
+	res, err := p.kernel.Fetcher().Get(ctx, req.URL, req.Headers)
 	if err != nil {
 		return nil, err
 	}

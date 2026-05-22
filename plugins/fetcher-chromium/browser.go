@@ -1,4 +1,4 @@
-package chromefetcher
+package chromiumfetch
 
 import (
 	"fmt"
@@ -38,14 +38,14 @@ var edgeFixedPaths = []string{
 	"/opt/microsoft/msedge/msedge",
 }
 
-// ResolveBrowserPath は使用するブラウザ実行ファイルのパスを解決する。
+// resolveBrowserPath は使用するブラウザ実行ファイルのパスを解決する。
 //
 // 優先順位:
 // 1) explicit（設定の browser_path）
 // 2) 環境変数 SCRAPERBOT_CHROMIUM_PATH
 // 3) Chromium 系候補（PATH / 固定パス）
 // 4) Edge 系候補（PATH / 固定パス）
-func ResolveBrowserPath(explicit string) (string, error) {
+func resolveBrowserPath(explicit string) (string, error) {
 	if p := strings.TrimSpace(explicit); p != "" {
 		return validateExecutable(p)
 	}

@@ -1,4 +1,4 @@
-package httpclient
+package httpfetch
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsRetryableHTTPError(t *testing.T) {
@@ -35,9 +37,7 @@ func TestIsRetryableHTTPError(t *testing.T) {
 func TestIsRetryableHTTPError_netTimeout(t *testing.T) {
 	t.Parallel()
 	err := &timeoutNetErr{}
-	if isRetryableHTTPError(err) {
-		t.Fatal("expected timeout net.Error to be non-retryable")
-	}
+	assert.False(t, isRetryableHTTPError(err))
 }
 
 type timeoutNetErr struct{}
@@ -51,7 +51,5 @@ func TestIsRetryableHTTPError_deadlineWithTime(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
 	defer cancel()
 	<-ctx.Done()
-	if isRetryableHTTPError(ctx.Err()) {
-		t.Fatal("expected context error after timeout to be non-retryable")
-	}
+	assert.False(t, isRetryableHTTPError(ctx.Err()))
 }

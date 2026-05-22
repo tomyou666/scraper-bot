@@ -14,13 +14,11 @@ import (
 type Scrape struct {
 	// Kernel は初期化済みプラグインを束ねるカーネル。
 	Kernel *core.Kernel
-	// Fetcher は HTTP 取得実装。
-	Fetcher core.Fetcher
 }
 
 // NewScrape は単一 URL スクレイプ用ユースケースを構築する。
-func NewScrape(k *core.Kernel, f core.Fetcher) *Scrape {
-	return &Scrape{Kernel: k, Fetcher: f}
+func NewScrape(k *core.Kernel) *Scrape {
+	return &Scrape{Kernel: k}
 }
 
 // Run は与えられた target URL に対してパイプラインを1回走らせる。
@@ -31,7 +29,7 @@ func (s *Scrape) Run(ctx context.Context, target string) (*model.Result, error) 
 	}
 	req := model.NewRequest(u, 0)
 
-	pipe := core.NewPipeline(s.Kernel, s.Fetcher)
+	pipe := core.NewPipeline(s.Kernel)
 	out, err := pipe.Run(ctx, req)
 	if err != nil {
 		return nil, err

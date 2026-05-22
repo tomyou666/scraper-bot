@@ -65,17 +65,7 @@ func (a *App) RunApp() int {
 	defer cancel()
 
 	logger := logging.NewDefault()
-	pageFetcher, err := core.NewFetcherFromConfig(&cfg)
-	if err != nil {
-		fmt.Fprintln(a.Stderr, "Fetcher初期化エラー:", err)
-		return 2
-	}
-	hostHTTP, err := core.ResolveHostHTTP(&cfg, pageFetcher)
-	if err != nil {
-		fmt.Fprintln(a.Stderr, "Host HTTP初期化エラー:", err)
-		return 2
-	}
-	host := core.NewHost(logger, &cfg, hostHTTP)
+	host := core.NewHost(logger, &cfg)
 	kernel := core.NewKernel(&cfg, host, core.Default())
 	if err := kernel.Init(ctx); err != nil {
 		fmt.Fprintln(a.Stderr, "Kernel初期化エラー:", err)
@@ -84,14 +74,14 @@ func (a *App) RunApp() int {
 	defer kernel.Close(ctx)
 
 	if cfg.Crawl.Enabled {
-		return a.runCrawl(ctx, &cfg, kernel, pageFetcher, logger)
+		return a.runCrawl(ctx, &cfg, kernel, logger)
 	}
-	return a.runSingle(ctx, &cfg, kernel, pageFetcher, flags)
+	return a.runSingle(ctx, &cfg, kernel, flags)
 }
 
 // runSingle は単一 URL モードでスクレイプしファイルまたは標準出力へ出す。
-func (a *App) runSingle(ctx context.Context, cfg *model.Config, k *core.Kernel, pageFetcher core.Fetcher, flags *Flags) int {
-	uc := usecase.NewScrape(k, pageFetcher)
+func (a *App) runSingle(ctx context.Context, cfg *model.Config, k *core.Kernel, flags *Flags) int {
+	uc := usecase.NewScrape(k)
 	res, err := uc.Run(ctx, cfg.Targets[0])
 	if err != nil {
 		fmt.Fprintln(a.Stderr, "スクレイピング失敗:", err)
@@ -111,11 +101,11 @@ func (a *App) runSingle(ctx context.Context, cfg *model.Config, k *core.Kernel, 
 }
 
 // runCrawl はクロールモードで複数 URL を巡回し結果を出力ディレクトリへ保存する。
-func (a *App) runCrawl(ctx context.Context, cfg *model.Config, k *core.Kernel, pageFetcher core.Fetcher, logger *logging.SlogAdapter) int {
+func (a *App) runCrawl(ctx context.Context, cfg *model.Config, k *core.Kernel, logger *logging.SlogAdapter) int {
 	w := storage.NewFileWriter(cfg.Output, cfg.Content.Formats)
-	robotsCache := robots.NewCache(pageFetcher, logger)
+	robotsCache := robots.NewCache(k.Fetcher(), logger)
 
-	uc := usecase.NewCrawl(k, pageFetcher, robotsCache, func(r *model.Result) {
+	uc := usecase.NewCrawl(k, robotsCache, func(r *model.Result) {
 		if err := w.Write(r); err != nil {
 			logger.Warn("出力書き込み失敗", "url", r.URL.String(), "err", err.Error())
 		}

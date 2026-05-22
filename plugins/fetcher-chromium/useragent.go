@@ -1,4 +1,4 @@
-package chromefetcher
+package chromiumfetch
 
 import (
 	"strings"
@@ -9,13 +9,13 @@ import (
 // DefaultUserAgent は chromedp 既定の HeadlessChrome UA を避けるための一般的な Chromium UA。
 const DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-// ResolveUserAgent は chromium フェッチで使う User-Agent を決定する。
+// resolveUserAgent は chromium フェッチで使う User-Agent を決定する。
 //
 // 優先順位:
 // 1) plugins.fetcher_config.user_agent
 // 2) request.headers["User-Agent"]
 // 3) DefaultUserAgent
-func ResolveUserAgent(fc model.FetcherConfig, requestHeaders map[string]string) string {
+func resolveUserAgent(fc model.FetcherConfig, requestHeaders map[string]string) string {
 	if ua := strings.TrimSpace(fc.UserAgent); ua != "" {
 		return ua
 	}
