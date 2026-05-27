@@ -22,6 +22,7 @@ func Initialize(ctx context.Context, cfg *model.Config) (*Application, func(), e
 		ProvideKernel,
 		ProvideFileWriter,
 		ProvideRobotsCache,
+		ProvidePipeline,
 		ProvideScrape,
 		ProvideCrawlerFactory,
 		ProvideCrawl,

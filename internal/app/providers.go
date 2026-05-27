@@ -50,9 +50,14 @@ func ProvideRobotsCache(k *core.Kernel) *robots.Cache {
 	return robots.NewCache(k.Fetcher())
 }
 
+// ProvidePipeline はカーネルから 1 URL 処理用パイプラインを構築する。
+func ProvidePipeline(k *core.Kernel) *core.Pipeline {
+	return core.NewPipeline(k)
+}
+
 // ProvideScrape は単一 URL スクレイプ用ユースケースを構築する。
-func ProvideScrape(k *core.Kernel) *usecase.Scrape {
-	return usecase.NewScrape(k)
+func ProvideScrape(pipeline *core.Pipeline) *usecase.Scrape {
+	return usecase.NewScrape(pipeline)
 }
 
 // FileResultSink はクロール結果を FileWriter へ書き出す Sink 実装。
@@ -68,10 +73,10 @@ func (s *FileResultSink) Handle(r *model.Result) {
 	}
 }
 
-// ProvideCrawlerFactory は Kernel と robots キャッシュから Crawler 生成関数を返す。
-func ProvideCrawlerFactory(k *core.Kernel, robotsCache *robots.Cache) usecase.CrawlerFactory {
+// ProvideCrawlerFactory は Kernel・Pipeline・robots キャッシュから Crawler 生成関数を返す。
+func ProvideCrawlerFactory(k *core.Kernel, pipeline *core.Pipeline, robotsCache *robots.Cache) usecase.CrawlerFactory {
 	return func(sink core.ResultSink) *core.Crawler {
-		return core.NewCrawler(k, robotsCache, sink)
+		return core.NewCrawler(k, pipeline, robotsCache, sink)
 	}
 }
 

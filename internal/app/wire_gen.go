@@ -21,9 +21,10 @@ func Initialize(ctx context.Context, cfg *model.Config) (*Application, func(), e
 	if err != nil {
 		return nil, nil, err
 	}
-	scrape := ProvideScrape(kernel)
+	pipeline := ProvidePipeline(kernel)
+	scrape := ProvideScrape(pipeline)
 	cache := ProvideRobotsCache(kernel)
-	crawlerFactory := ProvideCrawlerFactory(kernel, cache)
+	crawlerFactory := ProvideCrawlerFactory(kernel, pipeline, cache)
 	fileWriter := ProvideFileWriter(cfg)
 	fileResultSink := &FileResultSink{
 		Writer: fileWriter,

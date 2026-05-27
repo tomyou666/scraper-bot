@@ -53,13 +53,15 @@ type CrawlStats struct {
 	Skipped int
 }
 
-// NewCrawler はクローラを構築する。robots は nil 可（その場合は判定をスキップ）。
-func NewCrawler(k *Kernel, robots RobotsChecker, sink ResultSink) *Crawler {
+// NewCrawler はクローラを構築する。
+//
+// robots は nil 可（その場合は判定をスキップ）。
+func NewCrawler(k *Kernel, pipeline *Pipeline, robots RobotsChecker, sink ResultSink) *Crawler {
 	cfg := k.Config()
 	c := &Crawler{
 		cfg:      cfg,
 		kernel:   k,
-		pipeline: NewPipeline(k),
+		pipeline: pipeline,
 		robots:   robots,
 		sink:     sink,
 	}
