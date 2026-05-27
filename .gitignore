@@ -7,7 +7,7 @@ dist/
 project.zip
 
 # Go ビルド成果物 / テスト出力
-/bin/
+/backend/bin/
 **/out/
 /out/
 *.test
@@ -19,4 +19,4 @@ coverage.txt
 /tmp*/
 
 # その他
-configs/*
+backend/configs/*

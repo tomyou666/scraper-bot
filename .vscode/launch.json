@@ -16,10 +16,10 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd/scraperbot/main.go",
+            "program": "${workspaceFolder}/backend/cmd/scraperbot/main.go",
             "args": [
                 "--config",
-                "${workspaceFolder}/configs/my-config.yaml"
+                "${workspaceFolder}/backend/configs/my-config.yaml"
             ]
         },
         {

@@ -2,22 +2,22 @@
 
 Web ページとリンク先 PDF を取得し、Markdown などの形式に変換する Go 製スクレイピング CLI です。コンパイル時プラグイン（マイクロカーネル構成）で処理パイプラインを差し替えできます。
 
-詳細な設計は `[doc/](doc/)` 配下の設計書を参照してください。
+詳細な設計は `[backend/doc/](backend/doc/)` 配下の設計書を参照してください。
 
 ## 必要環境
 
-- Go 1.26 以上（`[go.mod](go.mod)` 準拠）
+- Go 1.26 以上（`[backend/go.mod](backend/go.mod)` 準拠）
 - 開発時（任意）: [golangci-lint](https://golangci-lint.run/)（`make lint` 用）
 - `plugins.fetcher: chromium` を使う場合: Chromium または Microsoft Edge（Chromium ベース）。Dev Container では `chromium` パッケージが入っています
 
 ## ビルド
 
 ```bash
-# バイナリを bin/scraperbot に出力
-make build
+# バイナリを backend/bin/scraperbot に出力
+make -C backend build
 
 # または直接 go build
-go build -o bin/scraperbot ./cmd/scraperbot 
+go build -o backend/bin/scraperbot ./backend/cmd/scraperbot
 ```
 
 ## クイックスタート
@@ -25,32 +25,32 @@ go build -o bin/scraperbot ./cmd/scraperbot
 ### 単一 URL を Markdown で取得（標準出力）
 
 ```bash
-./bin/scraperbot --url https://example.com/ --stdout
+./backend/bin/scraperbot --url https://example.com/ --stdout
 ```
 
 ### 単一 URL をファイルに保存
 
 ```bash
-./bin/scraperbot --url https://example.com/ --output-dir ./out
+./backend/bin/scraperbot --url https://example.com/ --output-dir ./out
 ```
 
 `./out/` に `{連番}-{ホスト}-{パス}.md` 形式で保存されます（デフォルトのファイル名パターン）。
 
 ### 設定ファイルを使う
 
-`[configs/config.example.yaml](configs/config.example.yaml)` をコピーして編集し、`-config` で指定します。
+`[backend/configs/config.example.yaml](backend/configs/config.example.yaml)` をコピーして編集し、`-config` で指定します。
 
 ```bash
-cp configs/config.example.yaml my-config.yaml
+cp backend/configs/config.example.yaml my-config.yaml
 # my-config.yaml の targets などを編集
 
-./bin/scraperbot --config my-config.yaml --stdout
+./backend/bin/scraperbot --config my-config.yaml --stdout
 ```
 
 ### サイト内クロール
 
 ```bash
-./bin/scraperbot \
+./backend/bin/scraperbot \
   --url https://example.com/docs/ \
   --crawl \
   --max-depth 2 \
@@ -64,7 +64,7 @@ cp configs/config.example.yaml my-config.yaml
 
 設定は次の順でマージされ、最後に `Validate()` が実行されます。
 
-1. **組み込みデフォルト**（`[internal/domain/model/config.go](internal/domain/model/config.go)` の `Default()`）
+1. **組み込みデフォルト**（`[backend/internal/domain/model/config.go](backend/internal/domain/model/config.go)` の `Default()`）
 2. **YAML 設定ファイル**（`--config` で指定した場合）
 3. **CLI フラグ**（同名項目はフラグが優先）
 
@@ -146,11 +146,11 @@ output:
   file_pattern: "{seq}-{host}-{path}.{ext}"
 ```
 
-完全な例は `[configs/config.example.yaml](configs/config.example.yaml)` を参照してください。
+完全な例は `[backend/configs/config.example.yaml](backend/configs/config.example.yaml)` を参照してください。
 
 ## CLI フラグ一覧
 
-`./bin/scraperbot -h` でもヘルプを確認できます。
+`./backend/bin/scraperbot -h` でもヘルプを確認できます。
 
 ### 一般
 
@@ -263,7 +263,7 @@ User-Agent の優先順位（chromium 時）: `fetcher_config.user_agent` → `r
 ### CSS セレクタで本文を絞る
 
 ```bash
-./bin/scraperbot \
+./backend/bin/scraperbot \
   --url https://example.com/page \
   --selector "article.main" \
   --filter selector \
@@ -275,7 +275,7 @@ User-Agent の優先順位（chromium 時）: `fetcher_config.user_agent` → `r
 ### クロール＋パス制限
 
 ```bash
-./bin/scraperbot \
+./backend/bin/scraperbot \
   --config my-config.yaml \
   --crawl \
   --include-path '^/docs/.*' \
@@ -287,7 +287,7 @@ User-Agent の優先順位（chromium 時）: `fetcher_config.user_agent` → `r
 ### ヘッダを付与
 
 ```bash
-./bin/scraperbot \
+./backend/bin/scraperbot \
   --url https://example.com/ \
   --header 'User-Agent=scraperbot/0.1' \
   --preprocessor header \
@@ -299,7 +299,7 @@ User-Agent の優先順位（chromium 時）: `fetcher_config.user_agent` → `r
 ### JavaScript ページを chromedp で取得
 
 ```bash
-./bin/scraperbot \
+./backend/bin/scraperbot \
   --url https://example.com/ \
   --fetcher chromium \
   --fetcher-headless \
@@ -310,7 +310,7 @@ User-Agent の優先順位（chromium 時）: `fetcher_config.user_agent` → `r
 
 ```bash
 export SCRAPERBOT_CHROMIUM_PATH=/usr/bin/chromium
-./bin/scraperbot --url https://example.com/ --fetcher chromium --stdout
+./backend/bin/scraperbot --url https://example.com/ --fetcher chromium --stdout
 ```
 
 ## 組み込みプラグイン
@@ -329,42 +329,44 @@ export SCRAPERBOT_CHROMIUM_PATH=/usr/bin/chromium
 | `default`     | LinkExtractor (P8) | `<a href>` の抽出と URL 解決      |
 
 
-プラグインの追加・差し替えは `[cmd/scraperbot/main.go](cmd/scraperbot/main.go)` の副作用 import を編集して再ビルドします。
+プラグインの追加・差し替えは `[backend/cmd/scraperbot/main.go](backend/cmd/scraperbot/main.go)` の副作用 import を編集して再ビルドします。
 
 ## 開発
 
 ```bash
 # フォーマット + vet + golangci-lint + テスト（race 付き）
-make check
+make -C backend check
 
 # 個別ターゲット
-make fmt      # go fmt
-make vet      # go vet
-make lint     # golangci-lint run
-make test     # go test -race
-make tidy     # go mod tidy
-make wire     # internal/app/wire_gen.go を再生成
+make -C backend fmt      # go fmt
+make -C backend vet      # go vet
+make -C backend lint     # golangci-lint run
+make -C backend test     # go test -race
+make -C backend tidy     # go mod tidy
+make -C backend wire     # internal/app/wire_gen.go を再生成
 ```
 
-`internal/app/providers.go` または `wire.go` を変更した場合は **`make wire` を実行** して `wire_gen.go` を再生成してください。通常の clone / build では `wire_gen.go` がコミット済みのため **`make wire` は不要** です。
+`backend/internal/app/providers.go` または `wire.go` を変更した場合は **`make -C backend wire` を実行** して `wire_gen.go` を再生成してください。通常の clone / build では `wire_gen.go` がコミット済みのため **`make -C backend wire` は不要** です。
 
-テストは `httptest` でテスト用 Web サーバーを起動し、`[testdata/html/](testdata/html/)` の HTML を返して検証しています。
+テストは `httptest` でテスト用 Web サーバーを起動し、`[backend/testdata/html/](backend/testdata/html/)` の HTML を返して検証しています。
 
 ## プロジェクト構成（概要）
 
 ```text
-cmd/scraperbot/          # CLI エントリ（プラグインの副作用 import）
-internal/
-  app/                  # Wire composition root（依存グラフ組み立て）
-  domain/               # エンティティ・プラグイン抽象
-  core/                 # カーネル・パイプライン・クローラ
-  usecase/              # シナリオ（単一 URL / クロール）
-  infrastructure/       # HTTP・chromedp・設定読込・出力・robots.txt
-  presentation/cli/     # CLI
-plugins/                # 具体プラグイン実装
-configs/                # 設定ファイル例
-testdata/html/          # 統合テスト用 HTML
-doc/                    # 設計書
+backend/
+  cmd/scraperbot/          # CLI エントリ（プラグインの副作用 import）
+  internal/
+    app/                   # Wire composition root（依存グラフ組み立て）
+    domain/                # エンティティ・プラグイン抽象
+    core/                  # カーネル・パイプライン・クローラ
+    usecase/               # シナリオ（単一 URL / クロール）
+    infrastructure/        # HTTP・chromedp・設定読込・出力・robots.txt
+    presentation/cli/      # CLI
+  plugins/                 # 具体プラグイン実装
+  configs/                 # 設定ファイル例
+  testdata/html/           # 統合テスト用 HTML
+  doc/                     # 設計書
+front/                     # フロントエンド（未実装）
 ```
 
 ## ライセンス
