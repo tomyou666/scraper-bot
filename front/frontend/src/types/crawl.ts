@@ -1,0 +1,71 @@
+import type { ContentFormat } from './config';
+import type { Workspace } from './workspace';
+
+export type RunMode = 1 | 2 | 3;
+
+export type CrawlRunStatus = 'idle' | 'running' | 'paused';
+
+export interface CrawlResultPreview {
+	url: string;
+	markdown?: string;
+	links?: string[];
+	metadata?: Record<string, string>;
+}
+
+export interface CrawlRunSummary {
+	id: string;
+	mode: RunMode;
+	startedAt: string;
+	finishedAt?: string;
+	enqueued: number;
+	succeeded: number;
+	failed: number;
+	skipped: number;
+	stoppedReason?: 'completed' | 'stopped' | 'error';
+	errorMessage?: string;
+}
+
+export type GlobalError = {
+	type: 'global';
+	message: string;
+	at: string;
+} | null;
+
+export type CrawlError = {
+	type: 'crawl';
+	message: string;
+	runId?: string;
+	at: string;
+} | null;
+
+export interface CrawlEventHandlers {
+	onNodeStarted: (nodeId: string, url: string) => void;
+	onNodeSucceeded: (nodeId: string, result: CrawlResultPreview) => void;
+	onNodeFailed: (nodeId: string, url: string, error: string) => void;
+	onNodeSkipped: (nodeId: string, url: string, reason: string) => void;
+	onEdgeDiscovered: (
+		sourceId: string,
+		targetId: string,
+		targetUrl: string,
+	) => void;
+	onCrawlCompleted: (
+		summary: Omit<CrawlRunSummary, 'id' | 'startedAt'>,
+	) => void;
+	onCrawlError: (message: string) => void;
+}
+
+export interface CrawlStubOptions {
+	mode: RunMode;
+	startNodeId?: string;
+	workspaceId: string;
+	getWorkspace: () => Workspace;
+	signal: AbortSignal;
+	isPaused: () => boolean;
+	waitWhilePaused: () => Promise<void>;
+	debugScenario?: 'global_fail' | 'node_fail' | 'stop_mid';
+	failNodeUrl?: string;
+}
+
+export function getActiveFormats(formats?: ContentFormat[]): ContentFormat[] {
+	return formats?.length ? formats : ['markdown'];
+}
