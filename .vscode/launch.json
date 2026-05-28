@@ -28,6 +28,19 @@
             "request": "attach",
             "mode": "local",
             "processId": "${command:pickProcess}"
+        },
+        {
+            "name": "Wails3: Debug Front App",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/front",
+            "cwd": "${workspaceFolder}/front",
+            "env": {
+                "CGO_CFLAGS": "-O0 -g",
+                "CGO_CXXFLAGS": "-O0 -g",
+                "CGO_LDFLAGS": "-O0 -g"
+            }
         }
     ]
 }

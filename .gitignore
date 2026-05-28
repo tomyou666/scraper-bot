@@ -20,3 +20,7 @@ coverage.txt
 
 # その他
 backend/configs/*
+
+# フロントエンドのビルド成果物
+**/dist/
+**/node_modules/

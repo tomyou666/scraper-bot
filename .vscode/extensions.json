@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "biomejs.biome",
+        "golang.go",
+        "tomi.xasnippets",
+        "dsznajder.es7-react-js-snippets",
+        "bradlc.vscode-tailwindcss"
+    ]
+}

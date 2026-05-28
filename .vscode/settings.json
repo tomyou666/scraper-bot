@@ -1,5 +1,14 @@
 {
     "editor.formatOnSave": true,
     "go.lintTool": "golangci-lint",
-    "go.lintOnSave": "package"
+    "go.lintOnSave": "package",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports.biome": "explicit",
+        "source.fixAll.biome": "explicit"
+    },
+    "biome.configurationPath": "./front/frontend/biome.json",
+    "biome.lsp.bin": "./front/frontend/node_modules/.bin/biome.ps1",
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
 }
