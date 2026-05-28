@@ -56,6 +56,37 @@
                 "panel": "dedicated",
                 "focus": false
             }
+        },
+        {
+            "label": "dlv: attach scraperbot",
+            "type": "shell",
+            "command": "node \"${workspaceFolder}/.vscode/scripts/dlv-attach-scraperbot.js\"",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "dlv",
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "API server listening at:"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            }
+        },
+        {
+            "label": "dlv: kill",
+            "type": "shell",
+            "command": "node \"${workspaceFolder}/.vscode/scripts/dlv-kill.js\"",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
         }
     ]
 }

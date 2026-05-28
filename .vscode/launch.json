@@ -43,11 +43,17 @@
             }
         },
         {
-            "name": "Wails3: Attach Go (after wails3 dev)",
+            "name": "Wails3: Attach Go (scraperbot, remote)",
             "type": "go",
             "request": "attach",
-            "mode": "local",
-            "processId": "${command:pickProcess}"
+            "mode": "remote",
+            "debugAdapter": "legacy",
+            "apiVersion": 2,
+            "host": "127.0.0.1",
+            "port": 2345,
+            "showLog": true,
+            "preLaunchTask": "dlv: attach scraperbot",
+            "postDebugTask": "dlv: kill"
         },
         {
             "name": "Wails3: Debug Frontend TSX (Chrome, Vite only)",
@@ -82,12 +88,13 @@
             "name": "Wails3: Dev + TSX + Attach Go",
             "configurations": [
                 "Wails3: Debug Frontend TSX (Chrome)",
-                "Wails3: Attach Go (after wails3 dev)"
+                "Wails3: Attach Go (scraperbot, remote)"
             ],
             "preLaunchTask": "wails3: dev",
             "presentation": {
                 "order": 1
-            }
+            },
+            "stopAll": true
         }
     ]
 }
