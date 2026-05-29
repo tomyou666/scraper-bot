@@ -21,7 +21,8 @@ help:
 	@echo "Quality targets:"
 	@echo "  check     lint + test"
 	@echo "  lint      Run frontend lint"
-	@echo "  format    Run frontend formatter"
+	@echo "  fmt    Run frontend formatter"
+	@echo "  generate    Generate frontend bindings"
 	@echo "  test      Run Go + frontend tests"
 	@echo ""
 	@echo "Frontend-only shortcuts:"
@@ -41,6 +42,9 @@ run:
 build:
 	$(WAILS) build
 
+generate:
+	$(WAILS) generate bindings -ts
+
 clean:
 	$(NPM) --prefix $(FRONTEND_DIR) run --if-present clean
 
@@ -50,7 +54,7 @@ test: go-test frontend-test
 
 lint: frontend-lint
 
-format: frontend-format
+fmt: frontend-format
 
 lint-fix: frontend-lint-fix
 
